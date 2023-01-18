@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/unity,react,macos,windows,firebase,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=unity,react,macos,windows,firebase,visualstudiocode
 
+### dotenv ###
+.env
+
 ### Firebase ###
 .idea
 **/node_modules/*
