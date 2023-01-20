@@ -4,17 +4,9 @@ import reportWebVitals from './reportWebVitals';
 import App from './App';
 
 //Coinbase | WalletConnect | Injected
-import { ethers } from "ethers";
-import { Web3ReactProvider } from '@web3-react/core'; 
-import { Web3Provider } from "@ethersproject/providers"; 
+import { ethers } from "ethers"; 
 import { ChakraProvider } from '@chakra-ui/react';
 
-function getLibrary(provider) {
-  const library = new ethers.providers.Web3Provider(provider);
-  library.pollingInterval = 8000; // frequency provider is polling
-
-  return library;
-}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -22,11 +14,7 @@ root.render(
   <React.StrictMode>
 
     <ChakraProvider>
-
-      <Web3ReactProvider getLibrary = {getLibrary}>
-        <App />
-      </Web3ReactProvider>
-
+      <App />
     </ChakraProvider>
 
   </React.StrictMode>
