@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/unity,react,macos,windows,firebase,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=unity,react,macos,windows,firebase,visualstudiocode
+# Created by https://www.toptal.com/developers/gitignore/api/unity,react,firebase,visualstudiocode,dotenv,windows,macos
+# Edit at https://www.toptal.com/developers/gitignore?templates=unity,react,firebase,visualstudiocode,dotenv,windows,macos
 
 ### dotenv ###
 .env
@@ -181,4 +181,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/unity,react,macos,windows,firebase,visualstudiocode
+# End of https://www.toptal.com/developers/gitignore/api/unity,react,firebase,visualstudiocode,dotenv,windows,macos
