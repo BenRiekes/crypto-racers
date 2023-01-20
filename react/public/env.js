@@ -46,7 +46,7 @@ window.env = {
   "npm_package_version": "0.1.0",
   "XPC_SERVICE_NAME": "0",
   "VSCODE_INJECTION": "1",
-  "GPG_TTY": "/dev/ttys000",
+  "GPG_TTY": "/dev/ttys001",
   "SHLVL": "2",
   "HOME": "/Users/ethanhanlon",
   "VSCODE_GIT_ASKPASS_MAIN": "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/git/dist/askpass-main.js",
