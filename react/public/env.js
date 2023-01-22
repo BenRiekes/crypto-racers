@@ -1,11 +1,11 @@
 window.env = {
-  "ADMIN_PRIVATE_KEY": "\"music impulse reflect practice old edge rare enemy okay oven stadium dove\" # FIXME: Not for production",
+  "ADMIN_PRIVATE_KEY": "\"8abdd802c5015507c50d1a19f58dd51fdcd1e9ad28f09816b879b2e3715bca5b\" # FIXME: Not for production Test 2 Wallet",
   "ALLUSERSPROFILE": "C:\\ProgramData",
   "ANDROID_SDK_ROOT": "C:\\Users\\Ben Riekes\\AppData\\Local\\Android\\Sdk",
   "APPDATA": "C:\\Users\\Ben Riekes\\AppData\\Roaming",
   "ChocolateyInstall": "C:\\ProgramData\\chocolatey",
   "ChocolateyLastPathUpdate": "132938551435032070",
-  "CHROME_CRASHPAD_PIPE_NAME": "\\\\.\\pipe\\LOCAL\\crashpad_26284_OAIKUEGNQIQXKBBL",
+  "CHROME_CRASHPAD_PIPE_NAME": "\\\\.\\pipe\\LOCAL\\crashpad_3132_ONIHMNYAVYNZRGEF",
   "COLOR": "1",
   "COLORTERM": "truecolor",
   "CommonProgramFiles": "C:\\Program Files\\Common Files",

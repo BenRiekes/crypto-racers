@@ -125,3 +125,17 @@ exports.thirdwebSignIn = functions.https.onCall(async (data: any, context: any) 
     return {token}; 
 })
 
+<<<<<<< HEAD
+=======
+// // Start writing functions
+// // https://firebase.google.com/docs/functions/typescript
+//
+// export const helloWorld = functions.https.onRequest((request, response) => {
+//   functions.logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// });
+
+exports.a = functions.https.onCall(async (data, context: functions.https.CallableContext) => {
+  res.send("Hello from Firebase!");
+});
+>>>>>>> 7f0766e4f7a5450cacd453d021f28126159c634d
