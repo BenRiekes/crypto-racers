@@ -1,0 +1,46 @@
+{
+    "name": "UI",
+    "maps": [
+        {
+            "name": "Menus",
+            "id": "2f62c0eb-4589-4c30-9c07-6cac30c77db2",
+            "actions": [
+                {
+                    "name": "Debug",
+                    "type": "Button",
+                    "id": "fe0b60db-309f-477b-ace2-76ad55ae9689",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "8195ffa7-fcc1-43c2-b5d4-de5cd467e51b",
+                    "path": "<Keyboard>/f12",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard",
+                    "action": "Debug",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        {
+            "name": "Keyboard",
+            "bindingGroup": "Keyboard",
+            "devices": [
+                {
+                    "devicePath": "<Keyboard>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        }
+    ]
+}

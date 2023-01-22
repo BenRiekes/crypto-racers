@@ -355,6 +355,8 @@
 -r:"Library/Bee/artifacts/200b0aE.dag/UnityEditor.UI.ref.dll"
 -r:"Library/Bee/artifacts/200b0aE.dag/UnityEngine.UI.ref.dll"
 "Assets/Scripts/CarControl.cs"
+"Assets/Scripts/DebugMenu.cs"
+"Assets/Scripts/PlayerControl.cs"
 -langversion:9.0
 
 /deterministic
