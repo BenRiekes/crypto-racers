@@ -7,3 +7,7 @@ import * as functions from "firebase-functions";
 //   functions.logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
 // });
+
+exports.a = functions.https.onCall(async (data, context: functions.https.CallableContext) => {
+  res.send("Hello from Firebase!");
+});

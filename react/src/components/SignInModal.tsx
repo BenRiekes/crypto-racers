@@ -27,7 +27,7 @@ export default function SignInModal() {
                         <p>Sign in with your wallet</p>
                     </ModalBody>
                     <ModalFooter>
-                        <Button onClick={connect}>Sign in</Button>
+                        <Button>Sign in</Button>
                     </ModalFooter>
                 </ModalContent>
             </Modal>
