@@ -3,7 +3,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; 
 
 //Components:
-import Navbar from "./components/Navbar.tsx";
+import Navbar from "./components/Navbar.jsx";
 
 //Pages: 
 import Home from "./pages/Home.tsx"; 

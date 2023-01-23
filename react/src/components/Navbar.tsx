@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useResolvedPath, useNavigate, useMatch, Link } from "react-router-dom";
 
 //Firebase:
-import { auth, db } from "../utils/Firebase.ts"; 
+import { auth, db } from "../utils/Firebase.js"; 
 import { User, createUserWithEmailAndPassword, signInWithCustomToken, signOut} from "firebase/auth";
 import { httpsCallable, getFunctions } from "firebase/functions"; 
 
@@ -17,7 +17,11 @@ import { useAddress, useDisconnect, useUser, useLogin, useLogout, useMetamask } 
 //CSS:
 import "./ComponentStyles.css";
 import Icon from "@mdi/react";
-import { Button, ButtonGroup } from '@chakra-ui/react'
+
+import { 
+    Button, ButtonGroup, useDisclosure, 
+    ModalOverlay, Modal, ModalContent, ModalBody, Text, ModalHeader, ModalCloseButton, ModalFooter,
+} from '@chakra-ui/react'
 
 import {
     mdiTire,
@@ -33,7 +37,7 @@ export default function Navbar() {
     
     //State Vars:
     const [balance, setBalance] = useState("");
-    const [user, setUser] = useState<User | null>(); //typescript type annotation 
+    const [user, setUser] = useState(); //typescript type annotation 
 
     //Thirdweb:
     const sdk = useSDK();
@@ -44,6 +48,9 @@ export default function Navbar() {
 
         setUser(user);
     }); 
+
+
+    //===================================================================================================
 
     const SignIn = async () => {
 
@@ -57,7 +64,7 @@ export default function Navbar() {
             payload: payload,
             address: address
 
-        }).then ((val: any) => {
+        }).then ((val) => {
             const token = val.data; 
 
             //After firebase function has completed: 
@@ -67,7 +74,7 @@ export default function Navbar() {
             })
 
 
-        }).catch ((error: any) => {
+        }).catch ((error) => {
             console.log("An error occured: " + error); 
         })
     }
@@ -81,6 +88,8 @@ export default function Navbar() {
             console.log("An error occured " + error); 
         })
     }
+
+    //===================================================================================================
 
     //Get Balance:
     useEffect(() => {
@@ -105,7 +114,8 @@ export default function Navbar() {
 
     }, [user])
 
-    
+    //===================================================================================================
+
     const ActionButton = () => {
 
         if (user) {
@@ -134,6 +144,38 @@ export default function Navbar() {
         }
     }
 
+    //===================================================================================================
+
+    const { isOpen, onOpen, onClose } = useDisclosure();
+
+    const EthModal = () => {
+
+        return (
+
+            <Modal isCentered isOpen = {isOpen} onClose={onClose}>
+                
+                
+                <ModalContent>
+
+                    <ModalHeader>Modal Title</ModalHeader>
+                    <ModalCloseButton />
+
+                    <ModalBody>
+                        <Text>Custom backdrop filters!</Text>
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button onClick={onClose}>Close</Button>
+                    </ModalFooter>
+
+                </ModalContent>
+
+            </Modal>
+        )
+    }
+
+    //===================================================================================================
+
 
     return (
 
@@ -151,7 +193,11 @@ export default function Navbar() {
                 </button>
                 
                         
-                <button>
+                <button 
+                    onClick = {() => {
+                       <EthModal />
+                    }}
+                >
                     <Icon path = {mdiEthereum} size = {1.5} /> 
                     <p style = {{padding: '5%'}}>{balance}</p>
                 </button>
