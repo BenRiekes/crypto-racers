@@ -5,7 +5,7 @@ import { useResolvedPath, useNavigate, useMatch, Link } from "react-router-dom";
 
 //Firebase:
 import { auth, db } from "../utils/Firebase.ts"; 
-import { createUserWithEmailAndPassword, signInWithCustomToken } from "firebase/auth";
+import { User, createUserWithEmailAndPassword, signInWithCustomToken, signOut} from "firebase/auth";
 import { httpsCallable, getFunctions } from "firebase/functions"; 
 
   
@@ -22,18 +22,28 @@ import { Button, ButtonGroup } from '@chakra-ui/react'
 import {
     mdiTire,
     mdiEthereum,
-    mdiWallet
+    mdiWallet,
+    mdiRacingHelmet,
+    mdiLocationExit
 }  from "@mdi/js"; 
 
 
 export default function Navbar() {
 
+    
     //State Vars:
-    const [balance, setBalance] = useState(''); 
+    const [balance, setBalance] = useState("");
+    const [user, setUser] = useState<User | null>(); //typescript type annotation 
 
     //Thirdweb:
-    const address = useAddress();
     const sdk = useSDK();
+    const address = useAddress();
+
+    //Auth State:
+    auth.onAuthStateChanged(user => {
+
+        setUser(user);
+    }); 
 
     const SignIn = async () => {
 
@@ -53,105 +63,142 @@ export default function Navbar() {
             //After firebase function has completed: 
             signInWithCustomToken(auth, token).then ((val) => {
                 console.log(val);
+ 
             })
+
 
         }).catch ((error: any) => {
             console.log("An error occured: " + error); 
         })
     }
 
+    const LogOut = async () => {
+
+        signOut(auth).then(() => {
+            window.location.reload(); 
+
+        }).catch((error) => {
+            console.log("An error occured " + error); 
+        })
+    }
+
     //Get Balance:
     useEffect(() => {
 
-        if (address) {
+        
+        if (auth.currentUser) {
             
-            const network = "Goerli";
+            const network = "goerli";
             const provider = ethers.getDefaultProvider(network);
         
-            provider.getBalance(address.toString()).then((balance) => {
+            provider.getBalance(auth.currentUser.uid.toString()).then((balance) => {
 
                 const balanceInEth = ethers.utils.formatEther(balance);
-                setBalance(balanceInEth.toString().substring(0, 4)); 
+                const concatBalance = balanceInEth.toString().substring(0, 4);
+
+                setBalance(concatBalance); 
             })
 
         } else {
-            setBalance('0');
+            setBalance('?');
         }
 
-    }, [])
+    }, [user])
 
     
+    const ActionButton = () => {
+
+        if (user) {
+
+            return (
+
+                <button onClick = {() => {
+                    LogOut();
+                }}>
+                    <Icon path = {mdiLocationExit} size = {1.5} />
+                    <p style = {{padding: '2.5%'}}>Sign Out</p>
+                </button>
+            )
+
+        } else  {
+           
+            return (
+
+                <button onClick = {() => {
+                    SignIn()
+                }}>
+                    <Icon path = {mdiWallet} size = {1.5} />
+                    <p style = {{padding: '2.5%'}}>Sign In</p>
+                </button>
+            ); 
+        }
+    }
+
 
     return (
 
 
         <nav className = "nav">
 
-            <ul>
+            
+            <div className = "nav-section">
+
+                <p>Crypto-Racers!</p>
+
                 <button>
                     <Icon path = {mdiTire} size = {1.5} /> 
-                    <p style = {{marginLeft: '2.5%'}}>0</p>
+                    <p style = {{padding: '5%'}}>0</p>
                 </button>
-
                 
-
+                        
                 <button>
                     <Icon path = {mdiEthereum} size = {1.5} /> 
-                    <p style = {{marginLeft: '2.5%'}}>{balance}</p>
+                    <p style = {{padding: '5%'}}>{balance}</p>
                 </button>
-            </ul>
 
-            <ul>  
+            </div>
+                    
+            <div className = "nav-section">
 
-                {/*Thirdweb SDK Connect Button */}
+                
                 {address ? (
 
-                    <button onClick = {() => {
-                        SignIn()
-                    }}>
-                        <Icon path = {mdiWallet} size = {1.5} />
-                        <p>Sign In</p>
-                    </button>
-
+                    <ActionButton/>
+                    
                 ) : (
 
                     
-                    <button>
-                        
-                        <ConnectWallet
-                        auth = {{
+                    <ConnectWallet
+                    auth = {{
 
-                            loginConfig: {
-                                redirectTo: "/Home",
-                            },
+                        loginConfig: {
+                            redirectTo: "/Home",
+                        },
 
-                            loginOptional: false,
-                            loginOptions: {
-                                nonce: "Crypto Racers!", 
-                                chainId: 5
-                            }
-                        }}
-                        
-                        accentColor = "#ffff" 
-                        colorMode = "dark"
-                        />
-
-                    </button>
-                   
-                       
+                        loginOptional: false,
+                        loginOptions: {
+                            nonce: "Crypto Racers!", 
+                            chainId: 5
+                        }
+                    }}
+                    
+                    accentColor = "#2d2d2d" 
+                    colorMode = "dark"
+                    />   
                 )}
 
-                {/* Navigate To Profile */}
-                <button
+                    
+                <button 
+                
                     onClick = {() => {
                         <Link to = "/Profile"></Link> 
-                    }}
+                    }}                    
                 >
+                    <Icon path = {mdiRacingHelmet} size = {1.5} />
                 </button>
 
-            </ul>
-
+            </div>
+                           
         </nav>
-
     )
 }

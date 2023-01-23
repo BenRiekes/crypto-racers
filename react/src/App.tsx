@@ -30,7 +30,7 @@ function App() {
           loginRedirect: ``
         }}
 
-        desiredChainId = {80001}
+        desiredChainId = {5}
       >
 
       <Navbar />

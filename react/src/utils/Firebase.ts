@@ -29,4 +29,3 @@ connectFunctionsEmulator(functions, "localhost", 5001);
 
 
 
-

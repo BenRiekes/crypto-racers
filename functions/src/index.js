@@ -17,47 +17,43 @@ import { ThirdwebStorage } from "@thirdweb-dev/storage";
 admin.initializeApp();
 
 //Helpers:
-async function generatePFP() {
+function generatePFP() {
     
     let randomNum  = Math.floor(Math.random() * (6 - 1 + 1)) + 1; 
     let starterHelmet; 
 
     switch (randomNum) {
         case 1:
-            starterHelmet = "crypto-racers/assets/BlackHelmet.png";
+            //Blue:
+            starterHelmet = "http://127.0.0.1:9199/v0/b/crypto-racers.appspot.com/o/StarterHelmets%2FBlueHelmet.png?alt=media&token=a5a34d87-63bc-4de7-a0ab-89808e990898";
             break;
         case 2: 
-            starterHelmet = "crypto-racers/assets/BlueHelmet.png";
+            //Black:
+            starterHelmet = "http://127.0.0.1:9199/v0/b/crypto-racers.appspot.com/o/StarterHelmets%2FBlackHelmet.png?alt=media&token=87254cfc-ed10-45df-94a0-9650bce36e23";
             break;
         case 3:
-            starterHelmet = "crypto-racers/assets/GrayHelmet.png";
+            //Gray: 
+            starterHelmet = "http://127.0.0.1:9199/v0/b/crypto-racers.appspot.com/o/StarterHelmets%2FGrayHelmet.png?alt=media&token=0c103ae4-62d1-4135-9c48-1f9e3eb60d12";
             break;
         case 4: 
-            starterHelmet = "crypto-racers/assets/GreenHelmet.png";
+            //Green:
+            starterHelmet = "http://127.0.0.1:9199/v0/b/crypto-racers.appspot.com/o/StarterHelmets%2FGreenHelmet.png?alt=media&token=8ef3a9a5-fb9e-4465-afa9-bfdde1cc7907";
             break;
         case 5:
-            starterHelmet = "crypto-racers/assets/RedHelmet.png"; 
+            //Red:
+            starterHelmet = "http://127.0.0.1:9199/v0/b/crypto-racers.appspot.com/o/StarterHelmets%2FRedHelmet.png?alt=media&token=95e83465-d0ae-463e-887c-0bdaa28755d8"; 
             break;
         case 6: 
-            starterHelmet = "crypto-racers/assets/YellowHelmet.png"; 
+            //Yellow
+            starterHelmet = "http://127.0.0.1:9199/v0/b/crypto-racers.appspot.com/o/StarterHelmets%2FYellowHelmet.png?alt=media&token=0ec6f58e-3665-4bde-980f-46411f3b83c2"; 
             break;
         default:
             console.log("An error occured: " + randomNum + "is not valid"); 
             return; 
     }
 
-    //Thirdweb IPFS Upload: 
-
-    const storage = new ThirdwebStorage(); 
-
-    let metadata = {
-        image: fs.readFileSync(starterHelmet),
-    }; 
-
-    let uri = await storage.upload(metadata);
-    let url = await storage.resolveScheme(uri); 
-
-    return url; 
+    
+    return starterHelmet; 
 }
 
 
@@ -72,7 +68,7 @@ export const thirdwebSignIn = functions.https.onCall(async (data, context) => {
         const domain = "localhost:3000"; 
 
         //Init thirdweb sdk
-        const sdk = ThirdwebSDK.fromPrivateKey (process.env.ADMIN_PRIVATE_KEY, "mumbai", ); 
+        const sdk = ThirdwebSDK.fromPrivateKey (process.env.ADMIN_PRIVATE_KEY, "goerli", ); 
 
         console.log(sdk); 
 
@@ -104,31 +100,23 @@ export const thirdwebSignIn = functions.https.onCall(async (data, context) => {
     })
 })
 
-const createUser = (address) => {
+const createUser = async (address) => {
 
-    return new Promise (async (resolve, reject) => {
+    const newUserRef = admin.firestore().collection("users").doc(address)
+        
+    newUserRef.set({
+        
+        username: generateUsername("", 0, 15),
+        bio: "No bio yet", 
+        pfp: generatePFP(), 
 
-        const newUserRef = admin.firestore().collection("users").doc(address)
-            
-        newUserRef.set({
-            
-            username: generateUsername("", 0, 15),
-            bio: "No bio yet", 
-            pfp: "", 
+        wins: 0,
+        losses: 0,
 
-            wins: 0,
-            losses: 0,
+        friends: [], 
+        incomingReq: [],
+        outgoingReq: [],
 
-            friends: [], 
-            incomingReq: [],
-            outgoingReq: [],
-
-        }).then ((val) => {
-            resolve("Successfully created profile"); 
-
-        }).catch ((error) => {
-            resolve("Create Profile Error: " + error);
-        })    
-    })   
+    }) 
 }
 
