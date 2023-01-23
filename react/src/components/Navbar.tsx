@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useResolvedPath, useNavigate, useMatch, Link } from "react-router-dom";
 
 //Firebase:
-import { auth, db } from "../utils/Firebase.js"; 
+import { auth, db } from "../utils/Firebase"; 
 import { User, createUserWithEmailAndPassword, signInWithCustomToken, signOut} from "firebase/auth";
 import { httpsCallable, getFunctions } from "firebase/functions"; 
 
@@ -37,7 +37,8 @@ export default function Navbar() {
     
     //State Vars:
     const [balance, setBalance] = useState("");
-    const [user, setUser] = useState(); //typescript type annotation 
+    const [user, setUser] = useState<User | null>(); //typescript type annotation 
+
 
     //Thirdweb:
     const sdk = useSDK();
@@ -64,7 +65,7 @@ export default function Navbar() {
             payload: payload,
             address: address
 
-        }).then ((val) => {
+        }).then ((val: any) => {
             const token = val.data; 
 
             //After firebase function has completed: 
@@ -74,7 +75,7 @@ export default function Navbar() {
             })
 
 
-        }).catch ((error) => {
+        }).catch ((error: any) => {
             console.log("An error occured: " + error); 
         })
     }
@@ -146,32 +147,43 @@ export default function Navbar() {
 
     //===================================================================================================
 
-    const { isOpen, onOpen, onClose } = useDisclosure();
+    const { isOpen, onOpen, onClose } = useDisclosure()
 
     const EthModal = () => {
 
+        
         return (
 
-            <Modal isCentered isOpen = {isOpen} onClose={onClose}>
-                
-                
-                <ModalContent>
+            <>
+                <Modal isCentered isOpen = {isOpen} onClose = {onClose}>
+                    
+                    <ModalOverlay
+                        bg='blackAlpha.300'
+                        backdropFilter='blur(10px) hue-rotate(90deg)'
+                    />
 
-                    <ModalHeader>Modal Title</ModalHeader>
-                    <ModalCloseButton />
+                    <ModalContent>
 
-                    <ModalBody>
-                        <Text>Custom backdrop filters!</Text>
-                    </ModalBody>
+                        <ModalHeader>Modal Title</ModalHeader>
+                        <ModalCloseButton />
 
-                    <ModalFooter>
-                        <Button onClick={onClose}>Close</Button>
-                    </ModalFooter>
+                        <ModalBody>
+                            <Text>Custom backdrop filters!</Text>
+                        </ModalBody>
 
-                </ModalContent>
+                        <ModalFooter>
 
-            </Modal>
+                            <Button onClick={onClose}>Close</Button>
+
+                        </ModalFooter>
+
+                    </ModalContent>
+                </Modal>
+            </>
         )
+
+         
+    
     }
 
     //===================================================================================================
@@ -195,7 +207,7 @@ export default function Navbar() {
                         
                 <button 
                     onClick = {() => {
-                       <EthModal />
+                       onOpen();   
                     }}
                 >
                     <Icon path = {mdiEthereum} size = {1.5} /> 

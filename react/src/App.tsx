@@ -3,11 +3,11 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; 
 
 //Components:
-import Navbar from "./components/Navbar.jsx";
+import Navbar from "./components/Navbar";
 
 //Pages: 
-import Home from "./pages/Home.tsx"; 
-import Profile from "./pages/Profile.tsx"; 
+import Home from "./pages/Home"; 
+import Profile from "./pages/Profile"; 
 
 //Web3
 import { ChainId, ConnectWallet, ThirdwebProvider } from "@thirdweb-dev/react";
