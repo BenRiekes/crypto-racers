@@ -2,13 +2,14 @@
 import React from "react"; 
 import { useState, useRef, useEffect } from "react";
 import { useResolvedPath, useNavigate, useMatch, Link } from "react-router-dom";
+import EthModal from "./EthModal"; 
 
 //Firebase:
 import { auth, db } from "../utils/Firebase"; 
 import { User, createUserWithEmailAndPassword, signInWithCustomToken, signOut} from "firebase/auth";
 import { httpsCallable, getFunctions } from "firebase/functions"; 
 
-  
+
 //Web3: 
 import { ethers } from "ethers"; 
 import { ConnectWallet, ThirdwebProvider, useSDK } from "@thirdweb-dev/react";
@@ -19,7 +20,7 @@ import "./ComponentStyles.css";
 import Icon from "@mdi/react";
 
 import { 
-    Button, ButtonGroup, useDisclosure, 
+    Button, ButtonGroup, useDisclosure, Avatar,
     ModalOverlay, Modal, ModalContent, ModalBody, Text, ModalHeader, ModalCloseButton, ModalFooter,
 } from '@chakra-ui/react'
 
@@ -36,8 +37,7 @@ export default function Navbar() {
 
     
     //State Vars:
-    const [balance, setBalance] = useState("");
-    const [user, setUser] = useState<User | null>(); //typescript type annotation 
+    const [user, setUser] = useState<User | undefined>(); //typescript type annotation
 
 
     //Thirdweb:
@@ -45,7 +45,7 @@ export default function Navbar() {
     const address = useAddress();
 
     //Auth State:
-    auth.onAuthStateChanged(user => {
+    auth.onAuthStateChanged((user: any) => {
 
         setUser(user);
     }); 
@@ -92,28 +92,7 @@ export default function Navbar() {
 
     //===================================================================================================
 
-    //Get Balance:
-    useEffect(() => {
-
-        
-        if (auth.currentUser) {
-            
-            const network = "goerli";
-            const provider = ethers.getDefaultProvider(network);
-        
-            provider.getBalance(auth.currentUser.uid.toString()).then((balance) => {
-
-                const balanceInEth = ethers.utils.formatEther(balance);
-                const concatBalance = balanceInEth.toString().substring(0, 4);
-
-                setBalance(concatBalance); 
-            })
-
-        } else {
-            setBalance('?');
-        }
-
-    }, [user])
+    
 
     //===================================================================================================
 
@@ -135,56 +114,19 @@ export default function Navbar() {
            
             return (
 
-                <button onClick = {() => {
+                <Button 
+                    style = {{display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', gap: '10px' }}
+                
+                    onClick = {() => {
                     SignIn()
                 }}>
                     <Icon path = {mdiWallet} size = {1.5} />
-                    <p style = {{padding: '2.5%'}}>Sign In</p>
-                </button>
+                    Sign In
+                </Button>
             ); 
         }
     }
 
-    //===================================================================================================
-
-    const { isOpen, onOpen, onClose } = useDisclosure()
-
-    const EthModal = () => {
-
-        
-        return (
-
-            <>
-                <Modal isCentered isOpen = {isOpen} onClose = {onClose}>
-                    
-                    <ModalOverlay
-                        bg='blackAlpha.300'
-                        backdropFilter='blur(10px) hue-rotate(90deg)'
-                    />
-
-                    <ModalContent>
-
-                        <ModalHeader>Modal Title</ModalHeader>
-                        <ModalCloseButton />
-
-                        <ModalBody>
-                            <Text>Custom backdrop filters!</Text>
-                        </ModalBody>
-
-                        <ModalFooter>
-
-                            <Button onClick={onClose}>Close</Button>
-
-                        </ModalFooter>
-
-                    </ModalContent>
-                </Modal>
-            </>
-        )
-
-         
-    
-    }
 
     //===================================================================================================
 
@@ -204,15 +146,7 @@ export default function Navbar() {
                     <p style = {{padding: '5%'}}>0</p>
                 </button>
                 
-                        
-                <button 
-                    onClick = {() => {
-                       onOpen();   
-                    }}
-                >
-                    <Icon path = {mdiEthereum} size = {1.5} /> 
-                    <p style = {{padding: '5%'}}>{balance}</p>
-                </button>
+                <EthModal user = {user}/>
 
             </div>
                     
@@ -246,14 +180,14 @@ export default function Navbar() {
                 )}
 
                     
-                <button 
+                <Button 
                 
                     onClick = {() => {
                         <Link to = "/Profile"></Link> 
                     }}                    
                 >
                     <Icon path = {mdiRacingHelmet} size = {1.5} />
-                </button>
+                </Button>
 
             </div>
                            
