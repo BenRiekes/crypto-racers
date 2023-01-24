@@ -4,12 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-enum DirectionLRS { Left, Right, Straight }
-enum DirectionFB { Forward, Backward }
-
 public class DebugMenu : MonoBehaviour
 {
     private Canvas canvas;
+    private TrackController tc;
     public Button verbose_toggle;
     public Button toggle_animation;
     public Button close;
@@ -55,11 +53,11 @@ public class DebugMenu : MonoBehaviour
 
         if (isAnimating) {
             toggle_animation.GetComponentInChildren<TextMeshProUGUI>().SetText("Stop Frames");
-            InvokeRepeating("AccelFrame", 0, (float) 1.0 / fps);
+            // InvokeRepeating("AccelFrame", 0, (float) 1.0 / fps);
             return;
         }
         toggle_animation.GetComponentInChildren<TextMeshProUGUI>().SetText("Start Frames");
-        CancelInvoke("AccelFrame");
+        // CancelInvoke("AccelFrame");
     }
 
     void IncrementMultiplier(bool positive) {
@@ -75,11 +73,7 @@ public class DebugMenu : MonoBehaviour
             track_object.position = new Vector3(0, track_object.position.y, track_object.position.z);
         }
         if (verbose) Debug.Log("Straightened track");
-    }    
-
-    void SetTurnDir(DirectionLRS dir) {
-        turnDir = dir;
-    }
+    }   
 
     void TurnFrame(DirectionLRS dir) {
         float original_multipler = multiplier;
@@ -99,15 +93,7 @@ public class DebugMenu : MonoBehaviour
         multiplier = original_multipler;
     }
 
-    void AccelFrame(/*DirectionFB dir = DirectionFB.Forward*/) {
-        Transform first = track_objects_transforms[0];
-        track_objects_transforms.RemoveAt(0);
-        track_objects_transforms.Add(first);
-
-        for (int i = 0; i < track_objects_transforms.Count; i++) {
-            track_objects_transforms[i].name = i.ToString(); 
-        }
-    }
+    
 
     // Update is called once per frames
     void FixedUpdate()
@@ -117,15 +103,15 @@ public class DebugMenu : MonoBehaviour
         }
 
         // if (isAnimating){
-            for (int i = 0; i < track_objects_transforms.Count; i++) {
-                Transform track_object = track_objects_transforms[i];
-                track_object.position = new Vector3(
-                    track_object_positions[i].x,
-                    track_object_positions[i].y,
-                    track_object_positions[i].z
-                );
-                track_object.localScale = track_object_scales[i];
-            }
+            // for (int i = 0; i < track_objects_transforms.Count; i++) {
+            //     Transform track_object = track_objects_transforms[i];
+            //     track_object.position = new Vector3(
+            //         track_object_positions[i].x,
+            //         track_object_positions[i].y,
+            //         track_object_positions[i].z
+            //     );
+            //     track_object.localScale = track_object_scales[i];
+            // }
         // }
 
         if (turnDir != DirectionLRS.Straight) {
@@ -139,20 +125,21 @@ public class DebugMenu : MonoBehaviour
     void Start()
     {
         canvas = GetComponent<Canvas>();
+        tc = track_objects.GetComponent<TrackController>();
 
         RecalculateTrackObjectTransforms();
 
         close.onClick.AddListener(CloseModal);
-        right_turn.onClick.AddListener(() => SetTurnDir(DirectionLRS.Right));
-        left_turn.onClick.AddListener(() => SetTurnDir(DirectionLRS.Left));
+        right_turn.onClick.AddListener(() => tc.SetTurnDir(DirectionLRS.Right));
+        left_turn.onClick.AddListener(() => tc.SetTurnDir(DirectionLRS.Left));
         straight.onClick.AddListener(StraightTrack);
         increase_multiplier.onClick.AddListener(() => IncrementMultiplier(true));
         decrease_multiplier.onClick.AddListener(() => IncrementMultiplier(false));
         verbose_toggle.onClick.AddListener(() => ToggleVerbose());
-        forward.onClick.AddListener(() => AccelFrame());
+        // forward.onClick.AddListener(() => AccelFrame());
         toggle_animation.onClick.AddListener(ToggleAnimation);
 
-        InvokeRepeating("AccelFrame", 0, (float) 1.0 / fps);
+        // InvokeRepeating("AccelFrame", 0, (float) 1.0 / fps);
     }
 
     
