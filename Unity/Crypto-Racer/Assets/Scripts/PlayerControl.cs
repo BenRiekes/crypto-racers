@@ -6,37 +6,51 @@ using UnityEngine.InputSystem;
 public class PlayerControl : MonoBehaviour
 {
     public GameObject trackObjects;
-    public float torque = 1f;
-    public float accelForce = 0.01f;
+    public Camera mainCamera;
+    public float torque = 0.000000005f;
+    public const float accelForce = 0.63f;
+    public Sprite[] turnSprites;
+    public Sprite[] boomSprites;
+
     private TrackController tc;
     private SpriteRenderer sprite;
     private Vector2 movementVector;
-    private int maxSpeed = 20;
-    private int minSpeed = -5;
+    private const float panningProportionalityConstant = 0.01f;
+    private const int maxSpeed = 50;
+    private const int minSpeed = 0;
     public float speed;
     private float movementX;
     private bool isHeld;
+    private float stanceX = 0.0f;
     private float timer = 0.0f;
+    private float trackWidth = 0.8f;
+    private float panning = 0.0f;
 
-    // p = 0.01f and i = 0.03f makes it not overshoot, but it gets there way too fast
-
-    private const float p = 0.013f;
-    private const float i = 0.0015f;
-    private const float d = 0.00f;
-    private const float integrator_limit = 1.0f;
+    // Equation for velocity:
+    // V = vMax * (1 - e^(-k*tau))
+    // Where vMax is the maximum velocity, k is the rate of change (acceleration constant), 
+    // and tau is the time since the start of the movement.
     private float accelSetpoint = 0.0f;
-    private float accelError = 0.0f;
-    private float accelErrorSum = 0.0f;
-    private float accelErrorDiff = 0.0f;
-    private float accelErrorPrev = 0.0f;
-    private bool isFeedbackLoop = true;
+
+    void CalculateVelocity() {
+        timer += Time.deltaTime;
+        float vMax = accelSetpoint;
+        float k = accelForce;
+        float tau = timer;
+        float v = vMax * (1 - Mathf.Exp(-k * tau));
+        // Debug.Log("IS VELOCITY accelSetpoint: " + accelSetpoint + ", speed: " + speed + ", v: " + v + ", timer: " + timer);
+        speed = v;
+    }
 
     void WhileHeld() {
         if (!isHeld) return;
         // Debug.Log("movementVector: " + movementVector + ", timer: " + timer);
         movementX += movementVector.x * torque;
-        movementX = Mathf.Clamp(movementX, -20, 20);
-        timer += Time.deltaTime;
+        movementX = Mathf.Clamp(movementX, -1 * turnSprites.Length + 1, turnSprites.Length - 1);
+        if (movementX < 0) sprite.flipX = true;
+        else sprite.flipX = false;
+        sprite.sprite = turnSprites[(int) Mathf.Abs(movementX)];
+
         float accelForce = movementVector.y * Mathf.Pow(2, timer);
         // Debug.Log("calculated accelForce: " + accelForce);
         accelSetpoint += accelForce;
@@ -44,46 +58,46 @@ public class PlayerControl : MonoBehaviour
         // Debug.Log("accelSetpoint**: " + accelSetpoint);
         if (accelSetpoint >= 1) tc.SetTrackFps((int) speed);
         else tc.SetTrackFps(0);
+        CalculateVelocity();
     }
 
-    void OnMove(InputValue value)
-    {
-        timer = 0.0f;
+    void CalculatePanning() {
+        stanceX += movementX * 0.01f;
+        stanceX = Mathf.Clamp(stanceX, -1 * trackWidth, trackWidth);
+        // Base panning value determined by velocity
+        float basePanning = speed * panningProportionalityConstant;
+        // Add or subtract value based on movementX input
+        panning = basePanning + stanceX;
+        // Ensure that the panning value stays within the track boundaries
+        panning = Mathf.Clamp(panning, -trackWidth, trackWidth);
+
+        Debug.Log("panning: " + panning + ", basePanning: " + basePanning + ", movementX: " + movementX + ", speed: " + speed + ", stanceX: " + stanceX);
+
+        GetComponent<Transform>().position = new Vector3(panning, -0.33f, -1);
+    }
+
+    void BringSetpointToZero() {
+        if (accelSetpoint > 0) accelSetpoint -= 1.0f;
+        else if (accelSetpoint < 0) accelSetpoint += 0.1f;
+        else {
+            accelSetpoint = 0;
+        }
+    }
+
+    void OnMove(InputValue value) {
         Vector2 v = value.Get<Vector2>();
+        if(v.y != movementVector.y && v.y <= 0) timer = 0.0f;
         this.movementVector = v;
         if (v.x == 0 && v.y == 0) {
             isHeld = false;
-            accelSetpoint = 0;
             return;
         }
         isHeld = true;
-    }
 
-    // Mainly for when the player is not holding the controller
-    void AccelPIDLoop() {
-        if (!isFeedbackLoop) return;
-        Debug.Log("accelSetpoint: " + accelSetpoint + ", speed: " + speed);
-        accelError = accelSetpoint - speed;
-        accelErrorSum += accelError * Time.deltaTime;
-        accelErrorDiff = (accelError - accelErrorPrev) / Time.deltaTime;
-        accelErrorPrev = accelError;
-
-        float accelP = p * accelError;
-        float accelI = i * accelErrorSum;
-        float accelD = d * accelErrorDiff;
-        accelI = Mathf.Clamp(accelI, -integrator_limit, integrator_limit);
-        accelErrorSum = Mathf.Clamp(accelErrorSum, -integrator_limit * 10, integrator_limit * 10);
-
-        float accelPID = accelP + accelI + accelD;
-        speed += accelPID;
-        speed = Mathf.Clamp(speed, minSpeed, maxSpeed);
-
-        tc.SetTrackFps((int) speed);
     }
 
     // Start is called before the first frame update
-    void Start()
-    {
+    void Start() {
         tc = trackObjects.GetComponent<TrackController>();
         sprite = GetComponent<SpriteRenderer>();
     }
@@ -92,11 +106,10 @@ public class PlayerControl : MonoBehaviour
     void FixedUpdate()
     {
         if (isHeld) WhileHeld();
+        else { speed -= 0.5f; speed = Mathf.Clamp(speed, minSpeed, maxSpeed); tc.SetTrackFps((int) speed); }
+        if (!isHeld && speed > 0) BringSetpointToZero();
 
-        AccelPIDLoop();
-        // Turn the car
-        if (movementX >= 10) { sprite.color = Color.red; } else
-        if (movementX <= -10) { sprite.color = Color.blue; }
-        else { sprite.color = Color.white; }
+        CalculatePanning();
+        mainCamera.transform.position = new Vector3(panning, 0, -3.03f);
     }
 }

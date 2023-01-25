@@ -12,6 +12,8 @@ public class TrackController : MonoBehaviour
     private DirectionFB accelDir = DirectionFB.Forward;
     private float multiplier = 0.1f;
     private int fps = 0;
+    private int lastFps = 0;
+    private bool trackProcessing = false;
 
     public void SetTurnDir(DirectionLRS dir) {
         turnDir = dir;
@@ -20,10 +22,6 @@ public class TrackController : MonoBehaviour
     public void SetTrackFps(int fps) {
         if (fps == this.fps) return;
         this.fps = fps;
-        Debug.Log("SetTrackFps: " + fps);
-        CancelInvoke("AccelFrame");
-        if (fps <= 0) { return; }
-        InvokeRepeating("AccelFrame", 0, (float) 1.0 / fps);
     }
 
     void TurnFrame(DirectionLRS dir) {
@@ -58,6 +56,8 @@ public class TrackController : MonoBehaviour
     }
 
     void AccelFrame() {
+        if (trackProcessing) return;
+        trackProcessing = true;
         Transform first = track_objects_transforms[0];
         if (accelDir == DirectionFB.Forward) {
             track_objects_transforms.RemoveAt(0);
@@ -69,7 +69,8 @@ public class TrackController : MonoBehaviour
 
         for (int i = 0; i < track_objects_transforms.Count; i++) {
             track_objects_transforms[i].name = i.ToString(); 
-        }        
+        }
+        trackProcessing = false;
     }
 
     void UpdateTrackSegmentPoistions() {
@@ -101,5 +102,12 @@ public class TrackController : MonoBehaviour
             TurnFrame(turnDir);
             turnDir = DirectionLRS.Straight;
         }
+
+        if (lastFps != fps && !trackProcessing) {
+            CancelInvoke("AccelFrame");
+            InvokeRepeating("AccelFrame", 0, (float) 1.0 / fps);
+        }
+
+        lastFps = fps;
     }
 }
