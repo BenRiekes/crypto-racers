@@ -6,6 +6,8 @@ public class TrackController : MonoBehaviour
 {
     public GameObject track_objects;
     public GameObject trackPrefab;
+    public GameObject player;
+    private PlayerControl pc;
     public const float renderYBottom = -0.93f;
     public const float renderYStep = 0.08f;
     public const int renderHeight = 14;
@@ -27,6 +29,9 @@ public class TrackController : MonoBehaviour
     private int lastFps = 0;
     private bool trackProcessing = false;
 
+    public float curvature = 0;
+    public float targetCurvature = 0;
+
     public void SetTurnDir(DirectionLRS dir) {
         turnDir = dir;
     }
@@ -36,14 +41,18 @@ public class TrackController : MonoBehaviour
         this.fps = fps;
     }
 
-    void TurnFrame(DirectionLRS dir) {
+    void CalculateTrackTurn() {
         float original_multipler = multiplier;
+        float curvatureDiff = (targetCurvature - curvature) * Time.deltaTime;
         int c = 0;
         foreach (Transform track_object in track_objects_transforms) {
             Vector3 track_object_position = track_object.position;
-            if (dir == DirectionLRS.Left) { track_object_position.x -= 1 * multiplier; }
-            else { track_object_position.x += 1 * multiplier; }
-            
+            // if (dir == DirectionLRS.Left) { track_object_position.x -= 1 * multiplier; }
+            // else { track_object_position.x += 1 * multiplier; }
+
+            // track_object_position.x is the midpoint
+            // the midpoint should be set based on the current curvature
+            track_object_position.x = track_object_position.x + Mathf.Pow((curvatureDiff * multiplier), 3);
 
             Transform road = track_object.GetChild(0);
             Transform wallLeft = track_object.GetChild(1);
@@ -61,8 +70,10 @@ public class TrackController : MonoBehaviour
 
             c++;
         }
+        Debug.Log("curvatureDiff: " + curvatureDiff);
         // RecalculateTrackObjectTransforms();
         multiplier = original_multipler;
+        curvature += curvatureDiff;
     }
 
     void RecalculateTrackObjectTransforms() {
@@ -187,6 +198,7 @@ public class TrackController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        pc = player.GetComponent<PlayerControl>();
         RenderTrack();
     }
 
@@ -196,10 +208,10 @@ public class TrackController : MonoBehaviour
         // AccelFrame();
         UpdateTrackSegmentPoistions();
 
-        if (turnDir != DirectionLRS.Straight) {
-            TurnFrame(turnDir);
-            turnDir = DirectionLRS.Straight;
-        }
+        CalculateTrackTurn();
+        // if (turnDir != DirectionLRS.Straight) {
+        //     turnDir = DirectionLRS.Straight;
+        // }
 
         if (lastFps != fps && !trackProcessing) {
             CancelInvoke("AccelFrame");

@@ -16,7 +16,7 @@ public class PlayerControl : MonoBehaviour
     private SpriteRenderer sprite;
     private Vector2 movementVector;
     private const float panningProportionalityConstant = 0.01f;
-    private const int maxSpeed = 40;
+    private const int maxSpeed = 10;
     private const int minSpeed = 0;
     public float speed;
     private float movementX;
@@ -71,7 +71,7 @@ public class PlayerControl : MonoBehaviour
         // Ensure that the panning value stays within the track boundaries
         panning = Mathf.Clamp(panning, -trackWidth, trackWidth);
 
-        Debug.Log("panning: " + panning + ", basePanning: " + basePanning + ", movementX: " + movementX + ", speed: " + speed + ", stanceX: " + stanceX);
+        // Debug.Log("panning: " + panning + ", basePanning: " + basePanning + ", movementX: " + movementX + ", speed: " + speed + ", stanceX: " + stanceX);
 
         GetComponent<Transform>().position = new Vector3(panning, -0.33f, -1);
     }

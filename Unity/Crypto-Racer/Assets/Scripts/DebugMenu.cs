@@ -75,23 +75,23 @@ public class DebugMenu : MonoBehaviour
         if (verbose) Debug.Log("Straightened track");
     }   
 
-    void TurnFrame(DirectionLRS dir) {
-        float original_multipler = multiplier;
-        int c = 0;
-        foreach (Transform track_object in track_objects_transforms) {
-            Vector3 track_object_position = track_object.position;
-            if (dir == DirectionLRS.Left) { track_object_position.x -= 1 * multiplier; }
-            else { track_object_position.x += 1 * multiplier; }
+    // void TurnFrame(DirectionLRS dir) {
+    //     float original_multipler = multiplier;
+    //     int c = 0;
+    //     foreach (Transform track_object in track_objects_transforms) {
+    //         Vector3 track_object_position = track_object.position;
+    //         if (dir == DirectionLRS.Left) { track_object_position.x -= 1 * multiplier; }
+    //         else { track_object_position.x += 1 * multiplier; }
             
-            track_object.position = track_object_position;
-            multiplier += 0.01f;
-            track_object_positions[c] = track_object_position;
-            track_object_scales[c] = track_object.localScale;
-            c++;
-        }
-        // RecalculateTrackObjectTransforms();
-        multiplier = original_multipler;
-    }
+    //         track_object.position = track_object_position;
+    //         multiplier += 0.01f;
+    //         track_object_positions[c] = track_object_position;
+    //         track_object_scales[c] = track_object.localScale;
+    //         c++;
+    //     }
+    //     // RecalculateTrackObjectTransforms();
+    //     multiplier = original_multipler;
+    // }
 
     
 
@@ -114,10 +114,10 @@ public class DebugMenu : MonoBehaviour
             // }
         // }
 
-        if (turnDir != DirectionLRS.Straight) {
-            TurnFrame(turnDir);
-            turnDir = DirectionLRS.Straight;
-        }
+        // if (turnDir != DirectionLRS.Straight) {
+        //     TurnFrame(turnDir);
+        //     turnDir = DirectionLRS.Straight;
+        // }
         
     }
 
@@ -130,8 +130,8 @@ public class DebugMenu : MonoBehaviour
         // RecalculateTrackObjectTransforms();
 
         close.onClick.AddListener(CloseModal);
-        right_turn.onClick.AddListener(() => tc.SetTurnDir(DirectionLRS.Right));
-        left_turn.onClick.AddListener(() => tc.SetTurnDir(DirectionLRS.Left));
+        right_turn.onClick.AddListener(() => tc.targetCurvature += 40 );
+        left_turn.onClick.AddListener(() => tc.targetCurvature -= 40 );
         straight.onClick.AddListener(StraightTrack);
         increase_multiplier.onClick.AddListener(() => IncrementMultiplier(true));
         decrease_multiplier.onClick.AddListener(() => IncrementMultiplier(false));
