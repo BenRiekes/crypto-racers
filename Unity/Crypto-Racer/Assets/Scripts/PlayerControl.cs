@@ -16,7 +16,7 @@ public class PlayerControl : MonoBehaviour
     private SpriteRenderer sprite;
     private Vector2 movementVector;
     private const float panningProportionalityConstant = 0.01f;
-    private const int maxSpeed = 50;
+    private const int maxSpeed = 40;
     private const int minSpeed = 0;
     public float speed;
     private float movementX;
@@ -67,7 +67,7 @@ public class PlayerControl : MonoBehaviour
         // Base panning value determined by velocity
         float basePanning = speed * panningProportionalityConstant;
         // Add or subtract value based on movementX input
-        panning = basePanning + stanceX;
+        panning = (basePanning * stanceX) + stanceX;
         // Ensure that the panning value stays within the track boundaries
         panning = Mathf.Clamp(panning, -trackWidth, trackWidth);
 

@@ -127,7 +127,7 @@ public class DebugMenu : MonoBehaviour
         canvas = GetComponent<Canvas>();
         tc = track_objects.GetComponent<TrackController>();
 
-        RecalculateTrackObjectTransforms();
+        // RecalculateTrackObjectTransforms();
 
         close.onClick.AddListener(CloseModal);
         right_turn.onClick.AddListener(() => tc.SetTurnDir(DirectionLRS.Right));
