@@ -16,7 +16,7 @@ public class PlayerControl : MonoBehaviour
     private SpriteRenderer sprite;
     private Vector2 movementVector;
     private const float panningProportionalityConstant = 0.01f;
-    private const int maxSpeed = 10;
+    private const int maxSpeed = 15;
     private const int minSpeed = 0;
     public float speed;
     private float movementX;

@@ -7,11 +7,19 @@ public class TrackController : MonoBehaviour
     public GameObject track_objects;
     public GameObject trackPrefab;
     public GameObject player;
+    public GameObject UIContainer;
     private PlayerControl pc;
+    private UIController uic;
     public const float renderYBottom = -0.93f;
     public const float renderYStep = 0.08f;
     public const int renderHeight = 14;
     private List<Transform> track_objects_transforms;
+
+    public string track = "s.40!r.90.30!s.20!l.45.50!s.40";
+    private TrackInstruction[] trackInstructions;
+    private TrackInstruction currentInstruction;
+    private int currentInstructionIndex = 0;
+    private int trackSegsTravelled = 0;
 
     private Vector3[] rowContainerPositions;
     private Vector3[] rowContainerScales;
@@ -24,7 +32,7 @@ public class TrackController : MonoBehaviour
 
     private DirectionLRS turnDir = DirectionLRS.Straight;
     private DirectionFB accelDir = DirectionFB.Forward;
-    private float multiplier = 0.1f;
+    private float multiplier = 0.05f;
     private int fps = 0;
     private int lastFps = 0;
     private bool trackProcessing = false;
@@ -41,18 +49,79 @@ public class TrackController : MonoBehaviour
         this.fps = fps;
     }
 
+    void ReadTrackInstructions() {
+        // A string like s.40!r.90.30!s.20!l.45.50!s.40 should be parsed into an array of TrackInstructions
+        // The first instruction should be a straight for 40
+        // The second instruction should be a right turn for 90 curvature and 30 units
+        // The third instruction should be a straight for 20
+        // The fourth instruction should be a left turn for 45 curvature and 50 units
+        // The fifth instruction should be a straight for 40
+        // The array should be stored in track_instructions
+
+        // Split the string into an array of strings
+        string[] trackInstructionsStrings = track.Split('!');
+        if (trackInstructionsStrings[0].ToCharArray()[0] != 's') Debug.Log("P-2");
+        trackInstructions = new TrackInstruction[trackInstructionsStrings.Length];
+
+        for(int i = 0; i < trackInstructionsStrings.Length; i++) {
+            string trackInstructionString = trackInstructionsStrings[i];
+            char[] chars = trackInstructionString.ToCharArray();
+            string[] split = trackInstructionString.Split('.');
+            TrackInstruction instruction;
+            int length;
+            int curvature;
+
+            switch (chars[0]) {
+                case 's':
+                    if (split.Length - 1 != TrackInstruction.straightParamsNum) {
+                        Debug.Log("ERROR P-1-" + (split.Length - 1) + "-" + TrackInstruction.straightParamsNum);
+                    }
+                    length = int.Parse(split[1]);
+                    instruction = new TrackInstruction(length);
+                    break;
+                case 'l':
+                    if (split.Length - 1 != TrackInstruction.turnParamsNum) {
+                        Debug.Log("ERROR P-1-" + (split.Length - 1) + "-" + TrackInstruction.turnParamsNum);
+                    }
+                    length = int.Parse(split[1]); 
+                    curvature = int.Parse(split[2]);
+                    instruction = new TrackInstruction(TrackInstructionType.LeftForCurvatureAndLength, curvature, length);
+                    break;
+                case 'r':
+                    if (split.Length - 1 != TrackInstruction.turnParamsNum) {
+                        Debug.Log("ERROR P-1-" + (split.Length - 1) + "-" + TrackInstruction.turnParamsNum);
+                    }
+                    length = int.Parse(split[1]);
+                    curvature = int.Parse(split[2]);
+                    instruction = new TrackInstruction(TrackInstructionType.RightForCurvatureAndLength, curvature, length);
+                    break;
+                default:
+                    Debug.Log("ERROR -0-1: " + split[0]);
+                    instruction = new TrackInstruction(0);
+                    break;
+            }
+            trackInstructions[i] = instruction;
+        }
+
+        currentInstruction = trackInstructions[0];
+
+        foreach(TrackInstruction instruction in trackInstructions) {
+            Debug.Log("Instruction: " + instruction.type + " Curvature " + instruction.curvature + " Length " + instruction.length);
+        }
+    }
+
     void CalculateTrackTurn() {
+        // if (currentInstructionIndex == 0) lastCurve = 0;
+
         float original_multipler = multiplier;
-        float curvatureDiff = (targetCurvature - curvature) * Time.deltaTime;
+        int speedNormalized = pc.speed > 1 ? 1 : 0;
+        float trackCurvatureDiff = (targetCurvature - curvature) * Time.deltaTime * speedNormalized;
         int c = 0;
         foreach (Transform track_object in track_objects_transforms) {
             Vector3 track_object_position = track_object.position;
-            // if (dir == DirectionLRS.Left) { track_object_position.x -= 1 * multiplier; }
-            // else { track_object_position.x += 1 * multiplier; }
-
             // track_object_position.x is the midpoint
             // the midpoint should be set based on the current curvature
-            track_object_position.x = track_object_position.x + Mathf.Pow((curvatureDiff * multiplier), 3);
+            track_object_position.x += Mathf.Pow((trackCurvatureDiff * multiplier), 3);
 
             Transform road = track_object.GetChild(0);
             Transform wallLeft = track_object.GetChild(1);
@@ -70,10 +139,12 @@ public class TrackController : MonoBehaviour
 
             c++;
         }
-        Debug.Log("curvatureDiff: " + curvatureDiff);
+
+        
+        // Debug.Log("curvatureDiff: " + curvatureDiff);
         // RecalculateTrackObjectTransforms();
         multiplier = original_multipler;
-        curvature += curvatureDiff;
+        curvature += trackCurvatureDiff;
     }
 
     void RecalculateTrackObjectTransforms() {
@@ -106,24 +177,6 @@ public class TrackController : MonoBehaviour
             rowContainerPositions[i] = track_object.position;
             rowContainerScales[i] = track_object.localScale;
         }
-    }
-
-    void AccelFrame() {
-        if (trackProcessing) return;
-        trackProcessing = true;
-        Transform first = track_objects_transforms[0];
-        if (accelDir == DirectionFB.Forward) {
-            track_objects_transforms.RemoveAt(0);
-            track_objects_transforms.Add(first);
-        } else {
-            track_objects_transforms.RemoveAt(track_objects_transforms.Count - 1);
-            track_objects_transforms.Insert(0, first);
-        }
-
-        for (int i = 0; i < track_objects_transforms.Count; i++) {
-            track_objects_transforms[i].name = i.ToString(); 
-        }
-        trackProcessing = false;
     }
 
     void RenderTrack() {
@@ -174,7 +227,7 @@ public class TrackController : MonoBehaviour
         RecalculateTrackObjectTransforms();
     }
 
-    void UpdateTrackSegmentPoistions() {
+    void UpdateTrackSegmentPositions() {
         for (int i = 0; i < track_objects_transforms.Count; i++) {
             Transform track_object = track_objects_transforms[i];
             track_object.position = new Vector3(
@@ -195,18 +248,39 @@ public class TrackController : MonoBehaviour
         }
     }
 
+    void AccelFrame() {
+        if (trackProcessing) return;
+        trackProcessing = true;
+        Transform first = track_objects_transforms[0];
+        if (accelDir == DirectionFB.Forward) {
+            track_objects_transforms.RemoveAt(0);
+            track_objects_transforms.Add(first);
+            trackSegsTravelled++;
+        } else {
+            track_objects_transforms.RemoveAt(track_objects_transforms.Count - 1);
+            track_objects_transforms.Insert(0, first);
+            trackSegsTravelled--;
+        }
+
+        for (int i = 0; i < track_objects_transforms.Count; i++) {
+            track_objects_transforms[i].name = i.ToString(); 
+        }
+        trackProcessing = false;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         pc = player.GetComponent<PlayerControl>();
+        uic = UIContainer.GetComponent<UIController>();
         RenderTrack();
+        ReadTrackInstructions();
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        // AccelFrame();
-        UpdateTrackSegmentPoistions();
+        UpdateTrackSegmentPositions();
 
         CalculateTrackTurn();
         // if (turnDir != DirectionLRS.Straight) {
@@ -216,6 +290,23 @@ public class TrackController : MonoBehaviour
         if (lastFps != fps && !trackProcessing) {
             CancelInvoke("AccelFrame");
             InvokeRepeating("AccelFrame", 0, (float) 1.0 / fps);
+        }
+
+
+        if (trackSegsTravelled >= currentInstruction.length) {
+            if (currentInstructionIndex + 1 > trackInstructions.Length) {
+                currentInstruction.curvature = 0;
+                currentInstruction.length = 999999999;
+                uic.Finish(1);
+                return;
+            }
+
+            curvature = targetCurvature;
+            currentInstructionIndex++;
+            currentInstruction = trackInstructions[currentInstructionIndex];
+            trackSegsTravelled = 0;
+            targetCurvature = currentInstruction.curvature;
+            Debug.Log("New instruction: Curvature " + currentInstruction.curvature + " Length " + currentInstruction.length);
         }
 
         lastFps = fps;
