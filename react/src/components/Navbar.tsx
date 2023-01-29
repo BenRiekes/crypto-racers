@@ -1,8 +1,9 @@
 //React:
 import React from "react"; 
 import { useState, useRef, useEffect } from "react";
-import { useResolvedPath, useNavigate, useMatch, Link } from "react-router-dom";
-import EthModal from "./EthModal"; 
+import { useResolvedPath, useNavigate, useMatch, Link, Outlet } from "react-router-dom";
+import EthModal from "./EthModal";
+import RacerModal from "./RacerModal";  
 
 //Firebase:
 import { auth, db } from "../utils/Firebase"; 
@@ -13,15 +14,14 @@ import { httpsCallable, getFunctions } from "firebase/functions";
 //Web3: 
 import { ethers } from "ethers"; 
 import { ConnectWallet, ThirdwebProvider, useSDK } from "@thirdweb-dev/react";
-import { useAddress, useDisconnect, useUser, useLogin, useLogout, useMetamask } from '@thirdweb-dev/react';
+import { useAddress } from '@thirdweb-dev/react';
 
 //CSS:
 import "./ComponentStyles.css";
 import Icon from "@mdi/react";
 
 import { 
-    Button, ButtonGroup, useDisclosure, Avatar,
-    ModalOverlay, Modal, ModalContent, ModalBody, Text, ModalHeader, ModalCloseButton, ModalFooter,
+    Button, IconButton
 } from '@chakra-ui/react'
 
 import {
@@ -29,16 +29,15 @@ import {
     mdiEthereum,
     mdiWallet,
     mdiRacingHelmet,
-    mdiLocationExit
+    mdiLocationExit,
+    mdiHomeCircleOutline
 }  from "@mdi/js"; 
 
 
 export default function Navbar() {
 
-    
     //State Vars:
     const [user, setUser] = useState<User | undefined>(); //typescript type annotation
-
 
     //Thirdweb:
     const sdk = useSDK();
@@ -89,9 +88,6 @@ export default function Navbar() {
             console.log("An error occured " + error); 
         })
     }
-
-    //===================================================================================================
-
     
 
     //===================================================================================================
@@ -102,19 +98,26 @@ export default function Navbar() {
 
             return (
 
-                <button onClick = {() => {
-                    LogOut();
-                }}>
+                <Button size = "lg"
+                    style = {
+                        {display: 'flex', justifyContent: 'center',
+                         alignItems: 'center', padding: '10px', gap: '10px' 
+                        }
+                    }
+                    onClick = {() => {
+                        LogOut();
+                    }
+                }>
                     <Icon path = {mdiLocationExit} size = {1.5} />
-                    <p style = {{padding: '2.5%'}}>Sign Out</p>
-                </button>
+                    Sign Out
+                </Button>
             )
 
         } else  {
            
             return (
 
-                <Button 
+                <Button size = "lg"
                     style = {{display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', gap: '10px' }}
                 
                     onClick = {() => {
@@ -128,29 +131,63 @@ export default function Navbar() {
     }
 
 
+    function CustomLink({ to, children }: { to: string; children: React.ReactNode }): JSX.Element {
+        const resolvedPath = useResolvedPath(to);
+        const isActive = useMatch({ path: resolvedPath.pathname, end : true});
+    
+        return (
+            <li className= {isActive ? "active" : ""}>
+                <Link to={to}>{children}</Link>
+            </li>   
+        );
+    }
+
+
     //===================================================================================================
 
 
     return (
 
-
         <nav className = "nav">
 
             
             <div className = "nav-section">
+            
+                    
+                <CustomLink to = "/">
 
-                <p>Crypto-Racers!</p>
+                    <Button size = "lg" style = {
+                        {display: 'flex', justifyContent: 'center',
+                         alignItems: 'center', padding: '10px', gap: '10px' }
+                        }>
+                        
+                        <Icon path = {mdiHomeCircleOutline} size = {1.5} />
+                        Crypto Racers!
+                    </Button>
 
-                <button>
-                    <Icon path = {mdiTire} size = {1.5} /> 
-                    <p style = {{padding: '5%'}}>0</p>
-                </button>
+                </CustomLink>
+                
+                <RacerModal user = {user} />
                 
                 <EthModal user = {user}/>
 
             </div>
                     
             <div className = "nav-section">
+
+                <CustomLink to = "/Profile">
+                    
+                    <Button size = "lg" style = {
+
+                        {display: 'flex', justifyContent: 'center',
+                         alignItems: 'center', padding: '10px', gap: '10px' }
+                        }
+                    >
+
+                        <Icon path = {mdiRacingHelmet} size = {1.5} />
+                        Profile
+                    </Button>
+                </CustomLink>
 
                 
                 {address ? (
@@ -178,19 +215,14 @@ export default function Navbar() {
                     colorMode = "dark"
                     />   
                 )}
-
                     
-                <Button 
-                
-                    onClick = {() => {
-                        <Link to = "/Profile"></Link> 
-                    }}                    
-                >
-                    <Icon path = {mdiRacingHelmet} size = {1.5} />
-                </Button>
+            </div> 
 
-            </div>
-                           
-        </nav>
+        </nav>                  
     )
 }
+
+
+
+
+

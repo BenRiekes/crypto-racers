@@ -112,11 +112,10 @@ const createUser = async (address) => {
 
         wins: 0,
         losses: 0,
-
+        
         friends: [], 
         incomingReq: [],
         outgoingReq: [],
-
     }) 
 }
 

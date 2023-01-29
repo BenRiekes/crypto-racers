@@ -1,0 +1,133 @@
+
+.home-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    margin: 0 auto;
+
+    width: 100%; 
+    height: fit-content;
+
+    background-color: #121113; 
+}
+
+.home-header-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center; 
+
+    margin-top: 2.5%;
+    width: 70%; 
+    height: fit-content; 
+
+    padding: 10px; 
+    opacity: 0.5; 
+
+    border-radius: 1rem;
+    background-image: url(../../../assets/Checkerboard.png);
+}
+
+.home-header-container h1 {
+    text-align: center;
+    font-size: 65px;
+    font-weight: bold;
+    font-style: italic;
+    color: #fff; 
+}
+
+.home-card-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+
+    justify-content: center; 
+    align-items: center;
+
+    margin-top: 1.5%;
+
+    width: 80%; 
+    height: fit-content; 
+    
+    overflow-x: scroll;
+}
+
+.home-card-container::-webkit-scrollbar {
+    width: 0;
+    display: none;
+}
+
+.home-card {
+    display: flex; 
+    flex-shrink: 0;
+
+    margin-right: 2.5%;
+    margin-left: 2.5%;
+    margin-top: 2.5%;
+    margin-bottom: 2.5%;
+
+    color: #fff;
+    background-color: #2d2d2d; 
+}
+
+.home-card:hover {
+    animation: scaleCard 1s ease-in-out;
+    animation-fill-mode: fowards; 
+}
+
+@keyframes scaleCard {
+    from {transform: scale(1);}
+    50% {transform: scale(1.125);}
+    to {trandform: scale(1);}
+}
+
+.line {
+    width: 70%;
+    margin-top: 1.25%;
+    border: 2px solid #2d2d2d;
+    border-radius: 2px; 
+}
+
+/* ===================================================================== */
+
+.slide {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    margin-top: 2.5%;
+    margin-bottom: 2.5%;
+
+    width: 70%;
+    height: 25vh;
+
+    border-radius: 1rem;
+}
+
+.slide h1 {
+
+    margin-bottom: 1.5%;
+
+    font-size: 40px;
+    font-weight: bold;
+    font-style: italic;
+    text-decoration: dotted;
+
+    letter-spacing: 2px;
+    color: #fff;
+}
+
+.slide img {
+    object-fit: cover;
+    opacity: .75;
+
+    width: 100%;
+    height: 65%;
+    border-radius: 1rem;
+}
+

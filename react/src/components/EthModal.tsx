@@ -87,11 +87,11 @@ const EthModal = ({ user }: Props) => {
 
                         <div style = {{display: 'flex', alignItems: 'flex-start', gap: '10px'}}>
                             
-                            <h1 style = {{fontSize: '25px', fontWeight: '600', textAlign: 'left'}}>
+                            <h1 style = {{fontSize: '25px', fontWeight: '600', textAlign: 'left', color: 'black'}}>
                                 Your Wallet
                             </h1>
 
-                            <Icon path = {mdiWallet} size = {1.5} />
+                            <Icon path = {mdiWallet} size = {1.5} color = "black" />
                         </div>
                         
                     </ModalHeader>
@@ -102,7 +102,7 @@ const EthModal = ({ user }: Props) => {
 
                         <div style = {{display: 'flex', alignItems: 'flex-start', gap: '10px'}}>
 
-                            <h2 style = {{fontSize: '20px', fontWeight: '550'}}>
+                            <h2 style = {{fontSize: '20px', fontWeight: '550', color: 'black'}}>
                                 You currently have {balance} Goerli ETH in your wallet
                             </h2>    
 

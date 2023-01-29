@@ -17,6 +17,10 @@
     background-color: #514f4f; 
 }
 
+.nav-section li {
+    list-style-type: none; 
+}
+
 .nav-section p {
     font-size: 25px;
     font-weight: bold; 

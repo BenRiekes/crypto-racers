@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { BrowserRouter } from 'react-router-dom';
+
+
 
 //Coinbase | WalletConnect | Injected
 import { ethers } from "ethers"; 
@@ -12,10 +15,15 @@ root.render(
 
   <React.StrictMode>
 
-    <ChakraProvider>
-      <App />
-    </ChakraProvider>
+    <BrowserRouter>
+    
 
+      <ChakraProvider>
+        <App />
+      </ChakraProvider>
+
+    </BrowserRouter>
+    
   </React.StrictMode>
     
 );

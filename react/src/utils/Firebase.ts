@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { Firestore, connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import "firebase/storage"; 
 
 import env from "react-dotenv";
 
@@ -20,7 +21,8 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app); 
+export const functions = getFunctions(app);
+export const storage = getFunctions(app);  
 
 //Initialize Emulators:
 connectAuthEmulator(auth, "http://127.0.0.1:9099"); 

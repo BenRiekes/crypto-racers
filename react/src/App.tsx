@@ -1,6 +1,6 @@
 //React:
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; 
+import { Route, Routes } from "react-router-dom"; 
 
 //Components:
 import Navbar from "./components/Navbar";
@@ -21,7 +21,6 @@ function App() {
 
     <>
       
-
       <ThirdwebProvider
 
         authConfig = {{
@@ -32,19 +31,18 @@ function App() {
 
         desiredChainId = {5}
       >
+        <Navbar/>
+        
+        <div>
 
-      <Navbar />
-
-      <Router>
-      
-        <Routes>
-
-          <Route path = '/' element = {<Home />} />
-          <Route path = '/' element = {<Profile />} />
-        </Routes>
-
-      </Router>
-
+          <Routes>
+          
+            <Route path = "/" element = {<Home />} />
+            <Route path = "/Profile" element = {<Profile />} />
+          </Routes>
+        </div>
+        
+        
       </ThirdwebProvider>
 
     </>
@@ -54,10 +52,5 @@ function App() {
   ) 
 }
 
-
-
-/*
-
-*/
 
 export default App;
