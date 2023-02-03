@@ -8,7 +8,7 @@ import firebase from "firebase/app";
 import { getStorage, ref } from "firebase/storage";   
 
 //CSS: 
-import "./PageStyles.css";
+import "./HomeStyles.css";
 
 import Icon from '@mdi/react';
 import { 

@@ -175,6 +175,7 @@ export default function Navbar() {
                     
             <div className = "nav-section">
 
+
                 <CustomLink to = "/Profile">
                     
                     <Button size = "lg" style = {
@@ -182,6 +183,7 @@ export default function Navbar() {
                         {display: 'flex', justifyContent: 'center',
                          alignItems: 'center', padding: '10px', gap: '10px' }
                         }
+
                     >
 
                         <Icon path = {mdiRacingHelmet} size = {1.5} />

@@ -13,6 +13,7 @@
     background-color: #121113; 
 }
 
+
 .home-header-container {
     display: flex;
     flex-direction: row;
@@ -48,7 +49,7 @@
 
     margin-top: 1.5%;
 
-    width: 80%; 
+    width: 70%; 
     height: fit-content; 
     
     overflow-x: scroll;
@@ -101,7 +102,7 @@
     align-items: center;
 
     margin-top: 2.5%;
-    margin-bottom: 2.5%;
+    margin-bottom: 5.5%;
 
     width: 70%;
     height: 25vh;
