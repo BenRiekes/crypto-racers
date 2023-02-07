@@ -16,6 +16,19 @@ import { ThirdwebStorage } from "@thirdweb-dev/storage";
 //Init:
 admin.initializeApp();
 
+const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === "true" || process.env.FUNCTIONS_EMULATOR === true;
+const BET_POOLS = {
+    "Weenie Hut Jr.": {
+        race: "midnight",
+        entryFee: 1,
+        betAmount: 5,
+    },
+    "Weenie Hut Sr.": {
+        race: "midnight",
+        entryFee: 2,
+        betAmount: 10,
+    }
+}
 
 //Sign In
 export const thirdwebSignIn = functions.https.onCall(async (data, context) => {
@@ -102,3 +115,167 @@ const createUser = async (address) => {
     return;
 }
 
+// ------------------
+// Matchmaking Functions
+
+// export const matchmakingRunner = functions.pubsub.schedule('1 * * * *').onRun(async (context) => {
+export const matchmakingRunner = functions.https.onRequest(async (req, res) => {
+    // query matchmaking for pending matches. find two users who have the same desiredRace and desiredBettingPool. add to activeRaces and delete from matchmaking.
+    // try to prioritize users who have been waiting the longest.
+    const query = await admin.firestore().collection('matchmaking').where('status', '==', 'pending').get();
+    if (query.docs.length === 0) { 
+        functions.logger.debug("No pending matches found."); 
+        if (IS_EMULATOR) res.send("No pending matches found.");
+        return;
+    };
+    const pendingMatches = query.docs.map((doc) => doc.data());
+    
+    // sort pending matches by time joined
+    pendingMatches.sort((a, b) => {
+        return a.timeJoined - b.timeJoined;
+    });
+    
+    // find matches
+    const matches = [];
+    let matchesDebug = [];
+    
+    for (let i = 0; i < pendingMatches.length; i++) {
+        const match = pendingMatches[i];
+        const matchUid = match.user;
+        const matchRace = match.desiredRace;
+        const matchBetPool = match.desiredBetPool;
+        const matchEntryFee = BET_POOLS[matchBetPool].entryFee;
+        const matchBetAmount = BET_POOLS[matchBetPool].betAmount;
+    
+        for (let j = i + 1; j < pendingMatches.length; j++) {
+            const otherMatch = pendingMatches[j];
+            const otherMatchUid = otherMatch.user;
+            const otherMatchRace = otherMatch.desiredRace;
+            const otherMatchBetPool = otherMatch.desiredBetPool;
+    
+            if (matchRace === otherMatchRace && matchBetPool === otherMatchBetPool) {
+                const msg = `Match found between ${matchUid} and ${otherMatchUid}`;
+                functions.logger.debug(msg);
+                matchesDebug.push(msg);
+                const matchData = {
+                    player1: matchUid,
+                    player2: otherMatchUid,
+                    player1Car: match.userCar,
+                    player2Car: otherMatch.userCar,
+                    status: "pending",
+                    timeMatchmade: admin.firestore.FieldValue.serverTimestamp(),
+                    timeRaceStarted: -1,
+                    timeRaceEnded: -1,
+                    race: matchRace,
+                    betPool: matchBetPool,
+                    entryFee: matchEntryFee,
+                    betAmount: matchBetAmount,
+                    winner: "",
+                    loser: "",
+                    players: [matchUid, otherMatchUid]
+                }
+                matches.push(matchData);
+                pendingMatches.splice(j, 1);
+                break;
+            }
+        }
+    }
+    
+    // add data from matches array to activeRaces collection. delete matchmaking doc.
+    for (let i = 0; i < matches.length; i++) {
+        const match = matches[i];
+        const newRace = await admin.firestore().collection('activeRaces').add(match);
+        await admin.firestore().collection('matchmaking').doc(match.player1).delete();
+        await admin.firestore().collection('matchmaking').doc(match.player2).delete();
+    }
+
+    if (matches.length === 0) matchesDebug = "No matches found.";
+    functions.logger.debug(`${matches.length} matches found.`);
+
+    if (IS_EMULATOR) res.send(matchesDebug);
+    return;
+});
+
+export const checkMatchmakingStatus = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'The function must be called while authenticated.'
+        );
+    }
+
+    const user = context.auth.uid;
+
+    const query = await admin.firestore().collection('activeRaces').where('players', 'array-contains', user).get();
+    if (query.docs.length === 0) return "NoMatchFound";
+
+    const pendingMatch = query.docs[0].data();
+    return pendingMatch;
+})
+
+export const joinMatchmaking = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'The function must be called while authenticated.'
+        );
+    }
+
+    const user = context.auth.uid;
+    const userCar = data.userCar;
+    const desiredRace = data.desiredRace;
+    const desiredBetPool = data.desiredBetPool;
+    
+    const newMatchmakingData = {
+        user: user,
+        userCar: userCar,
+        desiredRace: desiredRace,
+        desiredBetPool: desiredBetPool,
+        status: "pending",
+        timeJoined: admin.firestore.FieldValue.serverTimestamp(),
+    }
+
+    const newMatchmaking = await admin.firestore().doc(`matchmaking/${user}`).set(newMatchmakingData);
+    return newMatchmaking.id;
+});
+
+export const dropFromMatchmaking = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'The function must be called while authenticated.'
+        );
+
+    }
+
+    const user = context.auth.uid;
+
+    // query matchmaking for user matching uid and delete doc
+    const query = await admin.firestore().collection('matchmaking').where('user', '==', user).get();
+    query.forEach((doc) => {
+        doc.ref.delete();
+    });
+
+    return "success";
+});
+
+// ------------------
+// Race functions
+
+export const raceStatusUpdate = functions.https.onRequest(async (req,res) => {
+    
+});
+
+export const raceFinished = functions.https.onRequest(async (req, res) => {
+    // 
+});
+
+// ------------------
+
+if (IS_EMULATOR) {
+    functions.logger.debug("Running in emulator mode.");
+
+    setInterval(async () => {
+        admin.firestore().doc("debug/debug").set({time: admin.firestore.FieldValue.serverTimestamp()}, {merge: true});
+    }, 5000);
+}
