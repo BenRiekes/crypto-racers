@@ -1,5 +1,5 @@
 //React:
-import React from "react";
+import React, { createContext } from "react";
 import { Route, Routes } from "react-router-dom"; 
 
 //Components:
@@ -11,9 +11,9 @@ import Profile from "./pages/Profile";
 
 //Web3
 import { ChainId, ConnectWallet, ThirdwebProvider } from "@thirdweb-dev/react";
-
-
-
+import MultiplayerMatchmaking from "./pages/MultiplayerMatchmaking";
+import { RaceContext } from "./utils/RaceData";
+import Match from "./pages/Match";
 
 function App() {
 
@@ -34,12 +34,14 @@ function App() {
         <Navbar/>
         
         <div>
-
-          <Routes>
-          
-            <Route path = "/" element = {<Home />} />
-            <Route path = "/Profile" element = {<Profile />} />
-          </Routes>
+          <RaceContext.Provider value={null}>
+            <Routes>
+              <Route path = "/" element = {<Home />} />
+              <Route path = "/Profile" element = {<Profile />} />
+              <Route path="/matchmaking" element={<MultiplayerMatchmaking/>} />
+              <Route path="/match" element={<Match/>} />
+            </Routes>
+          </RaceContext.Provider>
         </div>
         
         

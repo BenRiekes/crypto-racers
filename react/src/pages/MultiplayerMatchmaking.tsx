@@ -10,37 +10,7 @@ import { collection, getDocs } from "firebase/firestore";
 import type { Track } from "../utils/Types";
 import { mdiLoading } from "@mdi/js";
 
-
-
 export default function MultiplayerMatchmaking() {
-
-    // const TRACKS: Track[] = [
-        // {
-        //     key: 0,
-        //     name: "Track 1",
-        //     description: "This is the first track",
-        //     image: "/TrackExample.jpg",
-        //     currentPlayers: 0,
-        //     avgWaitTime: 0
-        // },
-        // {
-        //     key: 1,
-        //     name: "Track 2",
-        //     description: "This is the second track",
-        //     image: "/TrackExample.jpg",
-        //     currentPlayers: 0,
-        //     avgWaitTime: 0
-        // },
-        // {
-        //     key: 2,
-        //     name: "Track 3",
-        //     description: "This is the third track",
-        //     image: "/TrackExample.jpg",
-        //     currentPlayers: 0,
-        //     avgWaitTime: 0
-        // },
-    // ]
-
     const [tracks, setTracks] = useState<Track[]>([]);
 
     async function getTracks() {
@@ -63,24 +33,12 @@ export default function MultiplayerMatchmaking() {
 
     useEffect(() => {
         getTracks();
-    }, [])
-
-    // FIXME: remove this and magicalDeauth
-    function magicalAuth() {
-        createUserWithEmailAndPassword(auth, `magic${Math.min(Math.random() * 1000) + 1}@magic.magic`, "magicmagic");
-    }
-
-    function magicalDeauth() {
-        signOut(auth);
-    }
+    }, []);
 
     return (
         <div className="bg-slate-600 w-full h-screen">
             <div className="flex flex-col justify-center items-center align-middle text-center">
                 <h1 className="text-stone-50 flex text-2xl font-bold mt-2">Matchmaking</h1>
-                {/* FIXME: not for production lolol */}
-                <Button bgColor="red" onClick={magicalAuth}>Magic Auth</Button>
-                <Button bgColor="red" onClick={magicalDeauth}>Magic Deauth</Button>
 
                 <div className="flex justify-center align-middle flex-wrap">
                     {

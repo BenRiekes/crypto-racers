@@ -1,11 +1,13 @@
 import { Card, CardBody, Heading, Modal, Image, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, useDisclosure, Button, useToast, Menu, MenuButton, MenuList, MenuItem } from "@chakra-ui/react";
-import { mdiChevronDoubleDown, mdiLoading, mdiSkull } from "@mdi/js";
+import { mdiAccount, mdiAccountCircle, mdiAccountCircleOutline, mdiChevronDoubleDown, mdiLoading, mdiSkull } from "@mdi/js";
 import Icon from "@mdi/react";
-import { collection, getDocs } from "firebase/firestore";
+import { Unsubscribe } from "firebase/auth";
+import { collection, doc, DocumentData, FirestoreError, getDocs, onSnapshot } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import React, { useEffect, useState } from "react";
-import { db, functions } from "../utils/Firebase";
-import type { BettingPoolCardProps } from "../utils/Types";
+import { useNavigate } from "react-router-dom";
+import { auth, db, functions } from "../utils/Firebase";
+import { BettingPoolCardProps, RaceData } from "../utils/Types";
 
 interface MatchmakingModalProps {
     trackName: string;
@@ -13,9 +15,20 @@ interface MatchmakingModalProps {
     image: string;
 }
 
+interface TrackParticipantData {
+    address: string;
+    displayName: string;
+    car: string;
+}
+
 export default function MatchmakingModal({ trackName, description, image }: MatchmakingModalProps) {
     const toast = useToast();
     const { isOpen, onOpen, onClose } = useDisclosure();
+
+    const [blockModalClose, setBlockModalClose] = useState(false);
+
+    const [userCar, setUserCar] = useState("");
+
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
     const [matchmakingActive, setMatchmakingActive] = useState(false);
@@ -26,6 +39,10 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
     const [matchmakingCheckInterval, setMatchmakingCheckInterval] = useState<NodeJS.Timeout | null>(null);
     const [selectedBettingPool, setSelectedBettingPool] = useState<string | null>(null);
     const [bettingPools, setBettingPools] = useState<BettingPoolCardProps[]>([]);
+    
+    const [isMatched, setIsPrematch] = useState(false);
+    const [matchedRaceData, setMatchedRaceData] = useState<RaceData | null>(null);
+    const [matchedRaceUnsub, setMatchedRaceUnsub] = useState<Unsubscribe | null>(null);
 
     // ------------------------------
     // Functions
@@ -88,16 +105,18 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
         checkMatchmakingStatusFunction()
         .then((result) => {
             console.log(result);
-            // if (result === undefined) {
-            //     fail("No result returned");
-            // }
-            // if (result.data === null) {
-            //     setMatchmakingActive(false);
-            //     return;
-            // }
-            // setCurrentPlayers(result.data.currentPlayers);
-            // setAvgWaitTime(result.data.avgWaitTime);
-            // setMatchmakingActive(true);
+            const data = result.data;
+            if (result === undefined) {
+                fail("No result returned");
+            }
+            if (typeof(data) === "object") {
+                console.log(`Matchmaking success: ${data}`);
+                setMatchmakingActive(false);
+                clearInterval(matchmakingCheckInterval as NodeJS.Timeout);
+                // setMatchmakingCheckInterval(null);
+                setIsPrematch(true);
+                setMatchedRaceData(data as RaceData);
+            }
         })
         .catch((err: any) => {
             fail(err);
@@ -111,13 +130,34 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
         const dropFromMatchmakingFunction = httpsCallable(functions, 'dropFromMatchmaking');
         dropFromMatchmakingFunction()
         .then(() => {
-            setIsLoading(false);
-            setIsError(false);
+            reset(true);
         })
         .catch((err: any) => {
             window.alert("Something went wrong. Please reload the page and try again.");
             fail(err);
         });
+    }
+
+    function reset(loading: boolean) {
+        setIsLoading(loading);
+        setIsError(false);
+        setMatchmakingActive(false);
+        setCurrentPlayers(0);
+        setAvgWaitTime(0);
+        setTimer(0);
+        setSelectedBettingPool(null);
+        clearInterval(timerInterval as NodeJS.Timeout);
+        clearInterval(matchmakingCheckInterval as NodeJS.Timeout);
+        setTimerInterval(null);
+        // setMatchmakingCheckInterval(null);
+        setIsPrematch(false);
+        setBlockModalClose(false);
+        setMatchedRaceData(null);
+        
+        if (matchedRaceUnsub) matchedRaceUnsub();
+        setMatchedRaceUnsub(null);
+
+        getTrackBettingPools();
     }
 
     function fail(reason: any) {
@@ -126,7 +166,14 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
         setIsLoading(false);
         setMatchmakingActive(false);
         clearInterval(matchmakingCheckInterval as NodeJS.Timeout);
-        setMatchmakingCheckInterval(null);
+        clearInterval(timerInterval as NodeJS.Timeout);
+        setTimerInterval(null);
+        // setMatchmakingCheckInterval(null);
+        setBlockModalClose(false);
+
+        if (matchedRaceUnsub) matchedRaceUnsub();
+        setMatchedRaceUnsub(null);
+
         return;
     }
 
@@ -149,10 +196,13 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
             setTimer(0);
             clearInterval(timerInterval as NodeJS.Timeout);
             setTimerInterval(null);
+            setBlockModalClose(false);
             return;
         }
 
         if (!isOpen) return;
+
+        setBlockModalClose(true);
 
         setTimerInterval(setInterval(() => {
             setTimer(timer => timer + 1);
@@ -171,8 +221,17 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
             isClosable: true,
             variant: 'left-accent',
         })
-        // setIsError(false);
-    }, [isError])
+    }, [isError]);
+
+    useEffect(() => { // [matchedRaceData]
+        console.log("IT SHOULD BE CLEARED")
+        clearInterval(matchmakingCheckInterval as NodeJS.Timeout);
+        clearInterval(timerInterval as NodeJS.Timeout);
+        // setMatchmakingCheckInterval(null);
+        setTimerInterval(null);
+        if (!matchedRaceData) return;
+        loadParticipantDatas();
+    }, [matchedRaceData]);
 
     // ------------------------------
     // Subcomponents
@@ -185,9 +244,7 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
                     <Icon path={mdiSkull} size={1} />
                     <p>Something went wrong. Please try again later or contact support.</p>
                     <Button onClick={() => {
-                        setIsError(false);
-                        setIsLoading(true);
-                        getTrackBettingPools();
+                        reset(true);
                     }}>Reload Betting Pools</Button>
                 </>
             )
@@ -220,11 +277,70 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
         )
     }
 
+    const [trackParticipantDatas, setTrackParticipantDatas] = useState<TrackParticipantData[]>([]);
+
+    function truncateAddress(address: string): string {
+        return `${address.slice(0, 6)}...${address.slice(address.length - 4, address.length)}`;
+    }
+
+    function loadParticipantDatas() {
+        // grab from current user
+        const playerOne: TrackParticipantData = {
+            address: auth.currentUser?.uid || "",
+            displayName: auth.currentUser?.displayName || truncateAddress(auth.currentUser?.uid || ""),
+            car: userCar
+        };
+
+        // grab data from matchData
+        // look at matchData.players, if 0th index is user, then current user is player 1
+        // else current user is player 2
+        const opponentIndex = matchedRaceData?.players[0] === auth.currentUser?.uid ? 1 : 0;
+        const opponentAddress = matchedRaceData?.players[opponentIndex];
+        let opponentDisplayName: string;
+        let opponentCar: string;
+        if (opponentIndex === 0) {
+            opponentDisplayName = matchedRaceData?.player1DisplayName || truncateAddress(opponentAddress || "");
+            opponentCar = matchedRaceData?.player1Car || "";
+        } else {
+            opponentDisplayName = matchedRaceData?.player2DisplayName || truncateAddress(opponentAddress || "");
+            opponentCar = matchedRaceData?.player2Car || "";
+        }
+
+        const playerTwo: TrackParticipantData = {
+            address: opponentAddress || "",
+            displayName: opponentDisplayName,
+            car: opponentCar
+        };
+
+        setTrackParticipantDatas([playerOne, playerTwo]);
+    }
+
+    function TrackParticipantData() {
+        return (
+        <>
+            <div className="flex flex-row">
+                {trackParticipantDatas.map((participantData, index) => {
+                    return (
+                        <div className="flex flex-col" key={index}>
+                            <Icon path={mdiAccountCircleOutline} size={1} />
+                            <p>{participantData.displayName}</p>
+                            <p>{participantData.car}</p>
+                        </div>
+                    )
+                })
+                }
+            </div>
+        </>
+        )
+
+    }
+
     // ------------------------------
     // Render
 
     return (
         <>
+
             <Card onClick={onOpen} className="cursor-pointer m-3 hover-container" maxW="md">
                 <Heading>{trackName}</Heading>
                 <CardBody>
@@ -240,11 +356,17 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
                 <ModalOverlay />
                 <ModalContent>
                     <ModalHeader className="align-middle">{trackName} <Image className="w-32" src={image} alt={trackName} /></ModalHeader>
-                    <ModalCloseButton isDisabled={matchmakingActive} />
+                    <ModalCloseButton isDisabled={blockModalClose} />
                     <ModalBody>
 
                         <LoadingOrError />
 
+                        {isMatched ? (
+                        <>
+                        <TrackParticipantData />
+                        </>
+                        ) : (
+                        <>
                         <Menu>
                             <MenuButton as={Button} rightIcon={<Icon path={mdiChevronDoubleDown} size={1} />}>
                                 Car
@@ -268,7 +390,7 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
                                 {isLoading || isError ? null :
                                 <>
                                 {bettingPools.map((bettingPool, index) => (
-                                    <BettingPoolCard key={index} {...bettingPool} onClick={() => setSelectedBettingPool("a")} />
+                                    <BettingPoolCard key={index} {...bettingPool} />
                                 ))}
                                 {
                                     selectedBettingPool === null ? (
@@ -279,6 +401,10 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
                                 }
                             </>
                         )}
+                        </>
+                        )
+                        }
+
                     </ModalBody>
                 </ModalContent>
             </Modal>
