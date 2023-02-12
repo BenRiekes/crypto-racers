@@ -4,11 +4,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/unity
 # Edit at https://www.toptal.com/developers/gitignore?templates=unity
 
-/Unity/Crypto-Racer/Temp
-/Unity/Crypto-Racer/Library
-/DedicatedServer/*
-
 ### Unity ###
+Unity/Crypto-Racer/Library/
+Unity/Crypto-Racer/Temp/
 # This .gitignore file should be placed at the root of your Unity project directory
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
