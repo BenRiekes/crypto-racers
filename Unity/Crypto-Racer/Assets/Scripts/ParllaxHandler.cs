@@ -7,13 +7,17 @@ public class ParllaxHandler : MonoBehaviour
 
     public GameObject backTemplate;
     public GameObject farTemplate;
+    public GameObject midTemplate;
     public GameObject player;
     public int backOffset = -10;
     private GameObject backContainer;
     private GameObject farContainer;
+    private GameObject midContainer;
+    
     public float backTemplateStep = 4.26f;
     public int farOffset = -5;
     public float farTemplateStep = 0.318f;
+    public float midTemplateStep = 0.5f;
 
     private float parallaxOffset = 0.0f;
     private float backOffsetX = 0.1f;

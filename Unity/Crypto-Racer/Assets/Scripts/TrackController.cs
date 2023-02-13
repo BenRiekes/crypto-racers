@@ -10,9 +10,9 @@ public class TrackController : MonoBehaviour
     public GameObject UIContainer;
     private PlayerControl pc;
     private UIController uic;
-    public const float renderYBottom = -0.93f;
-    public const float renderYStep = 0.08f;
-    public const int renderHeight = 14;
+    public const float renderYBottom = -0.98f;
+    public const float renderYStep = 0.04f;
+    public const int renderHeight = 28;
     private List<Transform> track_objects_transforms;
 
     public string track = "s.40!r.90.30!s.20!l.45.50!s.40";
@@ -20,6 +20,7 @@ public class TrackController : MonoBehaviour
     private TrackInstruction currentInstruction;
     private int currentInstructionIndex = 0;
     private int trackSegsTravelled = 0;
+    private int trackSegsTravelledTotal = 0;
 
     private Vector3[] rowContainerPositions;
     private Vector3[] rowContainerScales;
@@ -47,6 +48,44 @@ public class TrackController : MonoBehaviour
     public void SetTrackFps(int fps) {
         if (fps == this.fps) return;
         this.fps = fps;
+    }
+
+    public int GetTrackSegsTravelled() {
+        return trackSegsTravelledTotal;
+    }
+
+    public int GetPosition() {
+        return trackSegsTravelledTotal;
+    }
+
+    public bool IsFinished() {
+        return currentInstructionIndex >= trackInstructions.Length;
+    }
+
+    public float CalculateTrackCurvature() {
+    // float fTrackCurveDiff = (fTargetCurvature - fCurvature) * fElapsedTime * fSpeed;
+    // fCurvature += fTrackCurveDiff;
+    // fTrackCurvature += (fCurvature) * fElapsedTime * fSpeed;
+        float fTrackCurveDiff = (targetCurvature - curvature) * Time.deltaTime;
+        return curvature;
+
+    }
+
+    public bool PlayerIsOverObstacle() {
+        // Look at 7th track index
+        // If the player's x value is over a road, return false
+        // else return true
+
+        // Get the player's x value
+        float playerX = player.transform.position.x;
+        // Get the road's x value
+        float roadX = track_objects_transforms[7].position.x;
+        // Get the road's scale
+        float roadScale = track_objects_transforms[7].localScale.x;
+        // If the player's x value is over the road, return false
+        if (playerX > roadX - roadScale / 2 && playerX < roadX + roadScale / 2) return false;
+        // else return true
+        return true;
     }
 
     void ReadTrackInstructions() {
@@ -115,7 +154,7 @@ public class TrackController : MonoBehaviour
 
         float original_multipler = multiplier;
         int speedNormalized = pc.speed > 1 ? 1 : 0;
-        float trackCurvatureDiff = (targetCurvature - curvature) * Time.deltaTime * speedNormalized;
+        float trackCurvatureDiff = (targetCurvature - curvature) * (Time.deltaTime / 2.0f) * speedNormalized;
         int c = 0;
         foreach (Transform track_object in track_objects_transforms) {
             Vector3 track_object_position = track_object.position;
@@ -203,7 +242,7 @@ public class TrackController : MonoBehaviour
             Transform wallR = track_object.transform.GetChild(2);
             Transform grass = track_object.transform.GetChild(3);
             road.GetComponent<SpriteRenderer>().color = new Color(roadColor, roadColor, roadColor);
-            road.localScale = new Vector3(maxRoadWidth - (i * 0.5f), road.localScale.y, road.localScale.z);
+            road.localScale = new Vector3(maxRoadWidth - (i * 0.25f), road.localScale.y, road.localScale.z);
             wallL.GetComponent<SpriteRenderer>().color = new Color(wallRColor, wallGBColor, wallGBColor);
             wallL.transform.localPosition = new Vector3(
                 wallL.transform.localPosition.x + ((wallMaxCompensation / renderHeight) * (i + 1)),
@@ -256,10 +295,12 @@ public class TrackController : MonoBehaviour
             track_objects_transforms.RemoveAt(0);
             track_objects_transforms.Add(first);
             trackSegsTravelled++;
+            trackSegsTravelledTotal++;
         } else {
             track_objects_transforms.RemoveAt(track_objects_transforms.Count - 1);
             track_objects_transforms.Insert(0, first);
             trackSegsTravelled--;
+            trackSegsTravelledTotal--;
         }
 
         for (int i = 0; i < track_objects_transforms.Count; i++) {

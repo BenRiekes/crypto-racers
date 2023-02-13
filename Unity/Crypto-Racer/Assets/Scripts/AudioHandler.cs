@@ -8,17 +8,22 @@ public class AudioHandler : MonoBehaviour
     public Sprite mutedSprite;
     public Sprite unmutedSprite;
     private Image spriteRenderer;
+    public GameObject audioSourceObject;
     private AudioSource audioSource;
     private Button button;
-    private bool muted = false;
+    public bool muted = false;
+
+    public void StartSound() {
+        if (!muted) audioSource.Play();
+    }
 
     // Start is called before the first frame update
     void Start()
     {
         button = GetComponent<Button>();
-        audioSource = GetComponent<AudioSource>();
         button.onClick.AddListener(OnPressed);
         spriteRenderer = GetComponent<Image>();
+        audioSource = audioSourceObject.GetComponent<AudioSource>();
     }
 
     void OnPressed() {

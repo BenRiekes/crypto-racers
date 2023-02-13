@@ -57,6 +57,10 @@ jHOJJcZMCg==
         this.authHeader = authHeader;
     }
 
+    public bool NetworkingReady() {
+        return (authProvided || !active);
+    }
+
     byte[] encryptMessage(string message) {
         PgpPublicKey publicKey = ReadPublicKey(KEY);
 
@@ -109,7 +113,7 @@ jHOJJcZMCg==
     void MakeUpdateRequest() {
         if (!authProvided) { Debug.Log("Waiting"); return; } 
         int position = trackController.GetPosition();
-        int speed = playerControl.GetSpeed();
+        float speed = playerControl.GetSpeed();
         int currentTime = Epoch.Current();
         bool finished = trackController.IsFinished();
         string update = String.Format("{0}:{1}:{2}:{3}", position, speed, currentTime, finished);
