@@ -24,10 +24,10 @@ export const db = getFirestore(app);
 export const functions = getFunctions(app);
 export const storage = getFunctions(app);  
 
-//Initialize Emulators:
-connectAuthEmulator(auth, "http://127.0.0.1:9099"); 
-connectFirestoreEmulator(db, "localhost", 8082);
-connectFunctionsEmulator(functions, "localhost", 5001);  
+// //Initialize Emulators:
+// connectAuthEmulator(auth, "http://127.0.0.1:9099"); 
+// connectFirestoreEmulator(db, "localhost", 8082);
+// connectFunctionsEmulator(functions, "localhost", 5001);  
 
 
 

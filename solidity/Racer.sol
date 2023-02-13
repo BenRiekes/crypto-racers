@@ -89,7 +89,7 @@ contract Racer {
 
         address minter = msg.sender; 
 
-        if (IDToCar[_carID].paymentMethod == 1) {
+        if (IDToCar[_carID].paymentMethod == 1 && claimedFree[minter] == true) {
             require (msg.value == IDToCar[_carID].price * _amount, "Insufficient Matic"); 
         } 
 
@@ -276,7 +276,7 @@ contract Racer {
 
             //Car:
             IDToCar[_carID].tokens.push(id);
-            IDToCar[_carID].supply = IDToCar[_carID].supply - 1; 
+            IDToCar[_carID].supply = IDToCar[_carID].supply - 1;
 
             //State: 
             tokens.push(IDToToken[id]);
@@ -292,7 +292,7 @@ contract Racer {
         return IDToToken[_tokenID].stats; 
     }
 
-    //Access Control: -----------------------------------------------------------------------------
+    //Setter Functions: -----------------------------------------------------------------------------
 
     function setContracts (address _racerToken, address _racerUtils) external onlyCaller (msg.sender) {
         racerToken = _racerToken;  
@@ -306,7 +306,12 @@ contract Racer {
     function setRaceAccess (uint256 _raceID, bool _active) external onlyCaller (msg.sender) {
         require (IDToRace[_raceID].raceID == _raceID, "Race Does not exist"); 
         IDToRace[_raceID].active = _active; 
-    }   
+    }
+
+    function setCar (uint256 _carID, uint256 _supply, bool _onMarket) external onlyCaller (msg.sender) { 
+        IDToCar[_carID].supply = _supply;
+        IDToCar[_carID].onMarket = _onMarket; 
+    }
 
     function withdrawl () external onlyCaller (msg.sender) { 
         payable(msg.sender).transfer(address(this).balance);

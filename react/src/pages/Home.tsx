@@ -124,10 +124,9 @@ const Home = () => {
 
                 </Card>
 
-                
             </div>
 
-            <hr className = "line"/>
+            
 
             <ImageSlider {...slides}/>
             

@@ -185,7 +185,6 @@ export default function Navbar() {
                         }
 
                     >
-
                         <Icon path = {mdiRacingHelmet} size = {1.5} />
                         Profile
                     </Button>
@@ -193,12 +192,8 @@ export default function Navbar() {
 
                 
                 {address ? (
-
-                    <ActionButton/>
-                    
-                ) : (
-
-                    
+                    <ActionButton/>    
+                ) : ( 
                     <ConnectWallet
                     auth = {{
 
@@ -211,8 +206,7 @@ export default function Navbar() {
                             nonce: "Crypto Racers!", 
                             chainId: 5
                         }
-                    }}
-                    
+                    }}  
                     accentColor = "#2d2d2d" 
                     colorMode = "dark"
                     />   

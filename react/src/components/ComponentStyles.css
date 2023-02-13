@@ -3,6 +3,9 @@
     justify-content: space-between;
     align-items: center;
 
+    
+
+    width: 100%;
     padding: 10px; 
     background-color: #2d2d2d; 
 }

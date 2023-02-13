@@ -1602,7 +1602,7 @@ contract RacerUtils is ERC721URIStorage {
         isCaller[_racerToken] = true;
         isCaller[address(this)] = true;  
        
-        _tokenIds.increment(); //start counter at 1 
+        _tokenIds.increment(); 
     }   
 
     modifier onlyCaller (address _caller) {
@@ -1616,7 +1616,7 @@ contract RacerUtils is ERC721URIStorage {
     address public racerToken; 
     uint256 public startingRacer; 
       
-    mapping (address => bool) public isCaller;  
+    mapping (address => bool) public isCaller;
 
     //Minting Functions: ------------------------------------------------------------------------------------
 
@@ -1664,13 +1664,13 @@ contract RacerUtils is ERC721URIStorage {
             _safeMint (_minter, _newTokenId);
             _setTokenURI (_newTokenId, _uri);
 
-
             _tokenIDs[i] = _newTokenId; 
         }
+
+        require (_tokenIDs.length == amount, "Iteration error"); 
+        
         _setApprovalForAll(_minter, address(this), true);
         _setApprovalForAll(_minter, racer, true);
-
-        require (_tokenIDs.length == amount, "Iteration error");  
 
         (bool createToken, ) = racer.call(
             abi.encodeWithSignature(
@@ -1679,6 +1679,7 @@ contract RacerUtils is ERC721URIStorage {
             )
         );
         require (createToken, "Create token failed");
+
     }
 
     //Marketplace functions: ----------------------------------------------------
@@ -1750,7 +1751,28 @@ contract RacerUtils is ERC721URIStorage {
         require (fulfillStats, "Racer transfer failed");
     }
 
+    //Getter Functions: ---------------------------------------------------------
+
+    function walletOfOwner (address _owner) public view returns (uint256[] memory) {
+        
+        uint256 counter; 
+        uint256[] memory ownerWallet = new uint256[](balanceOf(_owner)); 
+
+        for (uint i = 1; i < _tokenIds.current(); i++) {
+
+            if (ownerOf(i) == _owner) {
+                ownerWallet[counter] = i; 
+                counter += 1; 
+            }
+        }
+        return ownerWallet; 
+    }
+
     //Setter Functions: ----------------------------------------------------------
+
+    function setStartingRacer (uint256 _newAmount) external onlyCaller (msg.sender) {
+        startingRacer = _newAmount; 
+    }
 
     function setCallers (address _newCaller) public onlyCaller (msg.sender) {
         isCaller[_newCaller] = true; 
@@ -1763,9 +1785,4 @@ contract RacerUtils is ERC721URIStorage {
         setCallers(_racer);
         setCallers(_racerToken);  
     }
-
-    function setStartingRacer (uint256 _newAmount) external onlyCaller (msg.sender) {
-        startingRacer = _newAmount; 
-    }
-
 }

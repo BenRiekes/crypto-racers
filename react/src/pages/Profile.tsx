@@ -1,15 +1,20 @@
 //React:
 import React from "react";
-import { useState, useRef, useEffect } from "react"; 
+import { useState, useRef, useEffect, } from "react"; 
+import { useNavigate  } from "react-router-dom";
 
 //Firebase:
-import "firebase/firestore";
+import "firebase/firestore"; 
 import { getAuth } from "firebase/auth";
 import { getFirestore, Timestamp, collection, orderBy, query, where, getDoc, doc, getDocs } from "firebase/firestore";
 
 //Web3:
 import { useAddress } from '@thirdweb-dev/react';
-import { fetchNFTs } from "../utils/FetchNFTs";  
+import { ethers } from "ethers";
+import { BigNumber } from "ethers"; 
+import { RacerUtilsABI } from "../abi/RacerUtilsABI";
+import { TokenTypes, fetchUserTokens } from "../utils/FetchTokens";
+
 
 //CSS:
 import "./ProfileStyles.css";
@@ -17,14 +22,17 @@ import Icon from '@mdi/react';
 import { Avatar, Image, Box, Button } from '@chakra-ui/react';
 import { mdiTrophy, mdiCrown, mdiCloseThick, mdiAccountGroup, mdiAccountEdit, mdiCar } from '@mdi/js'; 
 
+
+
 const Profile = () => {
 
+    
     //Init Lib: 
-    const db = getFirestore();
+    const db = getFirestore(); 
     const auth = getAuth(); 
     const address = useAddress(); 
+    const navigate = useNavigate(); 
 
-    //Firebase State:
     const [username, setUsername] = useState(); 
     const [background, setBackground] = useState(); 
     const [pfp, setPfp] = useState(); 
@@ -33,22 +41,41 @@ const Profile = () => {
     const [losses, setLosses] = useState(); 
 
     //Web3 State: 
-    const [cars, setCars] = useState([]); 
-    const [trophies, setTrophies] = useState([]);
-
+    const [userTokens, setUserTokens] = useState<TokenTypes[]>([]); 
+     
+    const network = "goerli";
+    const provider = new ethers.providers.AlchemyProvider(network, "wK71MQDuuUJDH45J2Sfb1MTIX43q_l14");
+    const racerUtilsAddr = "0xFE4bAd4D612Dcb8695A08422b81e6E75C74Cf563";
+    const racerUtilsContract = new ethers.Contract(racerUtilsAddr, RacerUtilsABI, provider);
 
     useEffect (() => {
 
-        fetchUserData();  
-       
-    })
+        const fetchTokens = async (address: any) => {
 
-    
+            let target: any; 
+            racerUtilsContract.functions.walletOfOwner(address).then (function(res) {
+                target = res[0].length; 
+                console.log(target);
+            });
+
+            const tokensArray = await fetchUserTokens(address);
+            if (tokensArray == target) {
+                setUserTokens(tokensArray); 
+            }
+        }
+
+        fetchUserData()
+        fetchTokens(address);
+        
+    }, [])  
+
+    console.log(userTokens);
+
     const fetchUserData = async () => {
 
         if (auth.currentUser === undefined) {
             return; 
-        }
+        } 
 
         if (auth.currentUser) {
 
@@ -58,7 +85,6 @@ const Profile = () => {
             if (userDocSnap.exists()) {
 
                 //Set State:
-
                 setUsername(userDocSnap.data().username);
                 setBackground(userDocSnap.data().background);
                 setPfp(userDocSnap.data().pfp); 
@@ -69,6 +95,7 @@ const Profile = () => {
             }
         }
     }
+
 
     return (
 
@@ -87,7 +114,7 @@ const Profile = () => {
                         style = {{borderRadius: '1rem', opacity: '0.5'}}
                     />
                     
-                    <div className = "profile-picture-container">
+                    <div className = "profile-picture-container"> 
 
                         <Image 
                             boxSize = '100%' 
@@ -135,27 +162,21 @@ const Profile = () => {
                             <Icon path = {mdiAccountGroup} size = {1.5} />
                             {friends.length} Friends
                         </Button>
-                    </div>
+                    </div>   
+
+                </div>
 
 
-                    <hr className = "line"></hr>
+                <div className = "profile-info-container" style = {{alignItems: 'center', justifyContent: 'center'}}>
 
-                    <div className = "profile-info-section">
-                        
-                        <Button size = "lg">
-                            <Icon path = {mdiCar} size = {1.75} />
-                            Cars
+                    <div className = "profile-info-section" style = {{width: '100%'}}>
+
+                        <Button size = "lg" style = {{width: '100%'}}>
+                            <Icon path = {mdiCar} size = {1.5} />
+                            {userTokens.length} Cars
+                            
                         </Button>
                     </div>
-
-                    <div className = "profile-info-section">
-                        
-                        <Button size = "lg">
-                            <Icon path = {mdiTrophy} size = {1.75} />
-                            Trophies
-                        </Button>
-                    </div>
-
                 </div>
             
             </div>

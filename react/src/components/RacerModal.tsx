@@ -8,6 +8,7 @@ import { User, createUserWithEmailAndPassword, signInWithCustomToken, signOut} f
 
 //Web3: 
 import { ethers } from "ethers";
+import { RacerTokenABI } from "../abi/RacerTokenABI";
 
 //CSS:
 import Icon from "@mdi/react";
@@ -33,8 +34,6 @@ interface Props {
 }
 
 
-
-
 const RacerModal = ({ user }: Props) => {
 
     //Style component states: 
@@ -42,31 +41,41 @@ const RacerModal = ({ user }: Props) => {
     const { isOpen, onOpen, onClose } = useDisclosure()
     const handleChange = (value: any) => setValue(value)
 
+    const [basePrice, setBasePrice] = useState(""); 
     const [balance, setBalance] = useState("");  
 
-    const contractAddress = "0xee204766a00C117eb17fbDc2a66ba9E25FF80e40";
-    const balanceOfABI = [{"inputs": [{"internalType": "address","name": "account","type": "address"}],
-        "name": "balanceOf","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],
-        "stateMutability": "view","type": "function"
-    }]; 
+    //Web3: --------------------------------------------------------------
 
+    const network = "goerli";
+    const provider = ethers.getDefaultProvider(network);
+
+    const racerTokenAddr = "0x83B81aeC03B8473D0E7458A71036E96247d5b9AA";
+    const racerTokenContract = new ethers.Contract(racerTokenAddr, RacerTokenABI, provider);
+    //----------------------------------------------------------------------
 
     //Get Balance:
     useEffect (() => {
 
         if (auth.currentUser) {
-            
-            const network = "goerli";
-            const provider = ethers.getDefaultProvider(network);
-            const contract = new ethers.Contract(contractAddress, balanceOfABI, provider);
+ 
+            //Get Price:
+            racerTokenContract.functions.price().then(function(priceRes) {
 
-            contract.functions.balanceOf(auth.currentUser.uid).then(function(result) {
-                setBalance(result.toString()); 
+               let weiPrice = (parseInt(priceRes[0]._hex, 16));
+               let ethPrice = weiPrice * 10 ** -18;
+
+               setBasePrice(ethPrice.toString()); 
+            })
+            
+            //Get Balance:
+            racerTokenContract.functions.balanceOf(auth.currentUser.uid).then(function(balRes) {
+                setBalance(balRes.toString()); 
             });
         }
 
-    }, [user]); 
-
+    }, [user]);
+    
+    
     return (
 
         <>
@@ -79,9 +88,7 @@ const RacerModal = ({ user }: Props) => {
   
                 <Icon path = {mdiTire} size = {1.5} />
                 <Text>{balance}</Text> 
-            
             </Button>
-
 
             <Modal isCentered isOpen = {isOpen} onClose = {onClose} size = "xl">
                 

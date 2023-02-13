@@ -1,3 +1,6 @@
+
+// File: contracts/RacerToken.sol
+
 //SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.17; 
@@ -81,7 +84,7 @@ contract RacerToken {
 
     //Setters: ------------------------
 
-    function editSupply (uint256 _amount, bool _increase) external onlyCaller (msg.sender) {
+    function setSupply (uint256 _amount, bool _increase) external onlyCaller (msg.sender) {
 
         if (_increase == true) {
             balanceOf[address(this)] += _amount; 
@@ -107,9 +110,12 @@ contract RacerToken {
         setCallers(_racerUtils);  
     }
 
-    function transferOwnership (address _newOwner) external onlyCaller (msg.sender) {
-        owner = _newOwner; 
+    //Widthdrawl: ------------------------
+
+    function withdrawl () external onlyCaller (msg.sender) {
+
+        (bool sent, ) = payable(racer).call {value : address(this).balance}(""); 
+        require (sent, "Failed to send balance"); 
     }
 
-    
 }
