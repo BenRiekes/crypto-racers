@@ -43,25 +43,12 @@ const Profile = () => {
     //Web3 State: 
     const [userTokens, setUserTokens] = useState<TokenTypes[]>([]); 
      
-    const network = "goerli";
-    const provider = new ethers.providers.AlchemyProvider(network, "wK71MQDuuUJDH45J2Sfb1MTIX43q_l14");
-    const racerUtilsAddr = "0xFE4bAd4D612Dcb8695A08422b81e6E75C74Cf563";
-    const racerUtilsContract = new ethers.Contract(racerUtilsAddr, RacerUtilsABI, provider);
 
     useEffect (() => {
 
         const fetchTokens = async (address: any) => {
-
-            let target: any; 
-            racerUtilsContract.functions.walletOfOwner(address).then (function(res) {
-                target = res[0].length; 
-                console.log(target);
-            });
-
             const tokensArray = await fetchUserTokens(address);
-            if (tokensArray == target) {
-                setUserTokens(tokensArray); 
-            }
+            setUserTokens(tokensArray);    
         }
 
         fetchUserData()
