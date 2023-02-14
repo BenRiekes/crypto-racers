@@ -53,12 +53,14 @@ public class PlayerControl : MonoBehaviour
     }
 
     public void SendSheet(int sheet) {
+        Debug.Log(0);
         this.sheet = sheet;
         LoadSpritesheet();
     }
 
     void LoadSpritesheet() {
         if (spritesLoaded) return;
+        Debug.Log(1);
         int minIndex = (sheet * 12);
         if (minIndex < 0) minIndex = 0;
         int maxIndex = (sheet * 12) + 12;
@@ -98,8 +100,8 @@ public class PlayerControl : MonoBehaviour
 
         if (movementX != 0) {
             bool isPositive = movementX > 0;
-            float curveFactor = isPositive ? 0.3f : -0.3f;
-            playerCurvature += curveFactor * Time.deltaTime * (speed / 2.0f);
+            float curveFactor = isPositive ? 0.1f : -0.1f;
+            playerCurvature += curveFactor * Time.deltaTime * (speed / 3.0f);
         }
 
         float accelForce = movementVector.y * Mathf.Pow(2, timer);
@@ -173,9 +175,12 @@ public class PlayerControl : MonoBehaviour
         tc = trackObjects.GetComponent<TrackController>();
         sprite = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
-        if (Application.isEditor) {
-            SendSheet(0);
-        }
+        // if (Application.isEditor) {
+            // SendSheet(0);
+        // }
+        sprite.sprite = turnSprites[0];
+
+        spritesLoaded = true;
         audioSource.pitch = 0;
         audioSource.volume = 0;
         audioSource.Play();

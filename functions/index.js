@@ -1,7 +1,6 @@
 //Set Up:
 import functions from "firebase-functions";
 import admin from "firebase-admin";
-import fs from 'fs'; 
 
 import dotenv from "dotenv";
 dotenv.config(); 
@@ -94,11 +93,13 @@ const createUser = async (address) => {
     const pfpIndex  = Math.floor(Math.random() * (6 - 1 + 1)) + 1; 
     const backgroundIndex = Math.floor(Math.random() * (4 - 1 + 1)) + 1; 
 
-    const newUserRef = admin.firestore().collection("users").doc(address)
+    const newUserRef = admin.firestore().collection("users").doc(address);
+
+    const username = generateUsername("", 0, 15);
         
     newUserRef.set({
         
-        username: generateUsername("", 0, 15),
+        username: username,
         bio: "No bio yet", 
         pfp: starterPfp[pfpIndex],
         background: starterBackground[backgroundIndex], 
@@ -112,16 +113,35 @@ const createUser = async (address) => {
 
     })
 
+    // update displayName
+    await admin.auth().updateUser(address, {
+        displayName: username
+    });
+
     return;
 }
 
 // ------------------
 // Matchmaking Functions
 
+// NOTE: The displayName values of any activeRace is only current as of doc creation time.
+// If you are accessing the data in the future, you should check the uid against the users collection to get the current displayName.
 // export const matchmakingRunner = functions.pubsub.schedule('1 * * * *').onRun(async (context) => {
 export const matchmakingRunner = functions.https.onRequest(async (req, res) => {
+    const matches = [];
+    let matchesDebug = [];
+    
+    // Query for docs that have a lastUpdate value older than 1 minute. Delete them.
+    const oldMatchesQuery = await admin.firestore().collection('matchmaking').where('lastUpdate', '<', Date.now() - 60000).get();
+    const oldMatches = oldMatchesQuery.docs.map((doc) => doc.data());
+    for (let i = 0; i < oldMatches.length; i++) {
+        const match = oldMatches[i];
+        functions.logger.debug(`Deleting old matchmaking doc for ${match.user}`);
+        matchesDebug.push(`Deleting old matchmaking doc for ${match.user}`);
+        await admin.firestore().collection('matchmaking').doc(match.user).delete();
+    }
+    
     // query matchmaking for pending matches. find two users who have the same desiredRace and desiredBettingPool. add to activeRaces and delete from matchmaking.
-    // try to prioritize users who have been waiting the longest.
     const query = await admin.firestore().collection('matchmaking').where('status', '==', 'pending').get();
     if (query.docs.length === 0) { 
         functions.logger.debug("No pending matches found."); 
@@ -134,10 +154,6 @@ export const matchmakingRunner = functions.https.onRequest(async (req, res) => {
     pendingMatches.sort((a, b) => {
         return a.timeJoined - b.timeJoined;
     });
-    
-    // find matches
-    const matches = [];
-    let matchesDebug = [];
     
     for (let i = 0; i < pendingMatches.length; i++) {
         const match = pendingMatches[i];
@@ -156,12 +172,27 @@ export const matchmakingRunner = functions.https.onRequest(async (req, res) => {
             if (matchRace === otherMatchRace && matchBetPool === otherMatchBetPool) {
                 const msg = `Match found between ${matchUid} and ${otherMatchUid}`;
                 functions.logger.debug(msg);
+                // Update both match docs to "matched" status
+                await admin.firestore().collection('matchmaking').doc(matchUid).update({
+                    status: "matched",
+                    match: otherMatchUid,
+                    matchDisplayName: otherMatch.userDisplayName,
+                    matchCar: otherMatch.userCar,
+                });
+                await admin.firestore().collection('matchmaking').doc(otherMatchUid).update({
+                    status: "matched",
+                    match: matchUid,
+                    matchDisplayName: match.userDisplayName,
+                    matchCar: match.userCar,
+                });
                 matchesDebug.push(msg);
                 const matchData = {
-                    player1: matchUid,
-                    player2: otherMatchUid,
+                    player1Address: matchUid,
+                    player2Address: otherMatchUid,
+                    player1DisplayName: match.userDisplayName,
                     player1Car: match.userCar,
                     player2Car: otherMatch.userCar,
+                    player2DisplayName: otherMatch.userDisplayName,
                     status: "pending",
                     timeMatchmade: admin.firestore.FieldValue.serverTimestamp(),
                     timeRaceStarted: -1,
@@ -172,7 +203,26 @@ export const matchmakingRunner = functions.https.onRequest(async (req, res) => {
                     betAmount: matchBetAmount,
                     winner: "",
                     loser: "",
-                    players: [matchUid, otherMatchUid]
+                    playerAddresses: [
+                        matchUid,
+                        otherMatchUid
+                    ],
+                    players: [
+                        {
+                            address: matchUid,
+                            lastUpdate: Date.now(),
+                            speed: 0,
+                            position: 0,
+                            isReady: false
+                        },
+                        {
+                            address: otherMatchUid,
+                            lastUpdate: Date.now(),
+                            speed: 0,
+                            position: 0,
+                            isReady: false
+                        }
+                    ]
                 }
                 matches.push(matchData);
                 pendingMatches.splice(j, 1);
@@ -184,12 +234,12 @@ export const matchmakingRunner = functions.https.onRequest(async (req, res) => {
     // add data from matches array to activeRaces collection. delete matchmaking doc.
     for (let i = 0; i < matches.length; i++) {
         const match = matches[i];
-        const newRace = await admin.firestore().collection('activeRaces').add(match);
-        await admin.firestore().collection('matchmaking').doc(match.player1).delete();
-        await admin.firestore().collection('matchmaking').doc(match.player2).delete();
+        await admin.firestore().collection('activeRaces').add(match);
+        await admin.firestore().collection('matchmaking').doc(match.player1Address).delete();
+        await admin.firestore().collection('matchmaking').doc(match.player2Address).delete();
     }
 
-    if (matches.length === 0) matchesDebug = "No matches found.";
+    if (matches.length === 0) matchesDebug = ["No matches found."];
     functions.logger.debug(`${matches.length} matches found.`);
 
     if (IS_EMULATOR) res.send(matchesDebug);
@@ -206,10 +256,15 @@ export const checkMatchmakingStatus = functions.https.onCall(async (data, contex
 
     const user = context.auth.uid;
 
-    const query = await admin.firestore().collection('activeRaces').where('players', 'array-contains', user).get();
-    if (query.docs.length === 0) return "NoMatchFound";
+    const query = await admin.firestore().collection('activeRaces').where('playerAddresses', 'array-contains', user).get();
+    if (query.docs.length === 0) {
+        admin.firestore().doc(`matchmaking/${user}`).update({
+            lastUpdate: Date.now()
+        })
+        return "NoMatchFound";
+    }
 
-    const pendingMatch = query.docs[0].data();
+    const pendingMatch = query.docs[0].id;
     return pendingMatch;
 })
 
@@ -222,6 +277,10 @@ export const joinMatchmaking = functions.https.onCall(async (data, context) => {
     }
 
     const user = context.auth.uid;
+
+    const userDoc = await admin.firestore().doc(`users/${user}`).get();
+    const userDisplayName = userDoc.data().username;
+
     const userCar = data.userCar;
     const desiredRace = data.desiredRace;
     const desiredBetPool = data.desiredBetPool;
@@ -229,10 +288,12 @@ export const joinMatchmaking = functions.https.onCall(async (data, context) => {
     const newMatchmakingData = {
         user: user,
         userCar: userCar,
+        userDisplayName: userDisplayName,
         desiredRace: desiredRace,
         desiredBetPool: desiredBetPool,
         status: "pending",
         timeJoined: admin.firestore.FieldValue.serverTimestamp(),
+        lastUpdate: Date.now()
     }
 
     const newMatchmaking = await admin.firestore().doc(`matchmaking/${user}`).set(newMatchmakingData);
@@ -245,7 +306,6 @@ export const dropFromMatchmaking = functions.https.onCall(async (data, context) 
             'failed-precondition',
             'The function must be called while authenticated.'
         );
-
     }
 
     const user = context.auth.uid;
@@ -259,15 +319,276 @@ export const dropFromMatchmaking = functions.https.onCall(async (data, context) 
     return "success";
 });
 
+export const matchReadyUp = functions.https.onCall(async (data, context) => {
+    checkContext(context);
+    const user = context.auth.uid;
+    const isReady = data.isReady;
+    if (isReady == null || isReady == undefined) return "ParameterError";
+    const query = await admin.firestore().collection('activeRaces').where('playerAddresses', 'array-contains', user).get();
+    if (query.docs.length === 0) {
+        return "NoMatchFound";
+    }
+
+    const pendingMatch = query.docs[0].data();
+    const playerIndex = pendingMatch.playerAddresses["0"] === user ? 0 : 1;
+    if (playerIndex === -1) return "PlayerNotFound";
+    let newValues = {};
+    if (playerIndex === 1) {
+        newValues = {
+            0: {
+                address: pendingMatch.players["0"].address,
+                lastUpdate: pendingMatch.players["0"].lastUpdate,
+                speed: 0,
+                position: 0,
+                isReady: pendingMatch.players["0"].isReady
+            },
+            1: {
+                address: user,
+                lastUpdate: Date.now(),
+                speed: 0,
+                position: 0,
+                isReady: isReady
+            },
+        }
+    } else {
+        newValues = {
+            0: {
+                address: user,
+                lastUpdate: Date.now(),
+                speed: 0,
+                position: 0,
+                isReady: isReady
+            },
+            1: {
+                address: pendingMatch.players["1"].address,
+                lastUpdate: pendingMatch.players["1"].lastUpdate,
+                speed: 0,
+                position: 0,
+                isReady: pendingMatch.players["1"].isReady
+            },
+        }
+    }
+    let status = "prematch"
+    if (newValues["0"].isReady && newValues["1"].isReady) {
+        status = "active";
+    }
+
+    await admin.firestore().collection('activeRaces').doc(query.docs[0].id).set({
+        players: newValues,
+        status: status
+    }, { merge: true });
+
+    return "success";
+});
+
+export const matchCancel = functions.https.onCall(async (data, context) => {
+    checkContext(context);
+    const user = context.auth.uid;
+    const query = await admin.firestore().collection('activeRaces').where('playerAddresses', 'array-contains', user).get();
+    if (query.docs.length === 0) {
+        return "NoMatchFound";
+    }
+
+    const pendingMatch = query.docs[0].data();
+    const playerIndex = pendingMatch.playerAddresses["0"] === user ? 0 : 1;
+    if (playerIndex === -1) return "PlayerNotFound";
+    if (query.docs[0].data().status != "prematch") return "MatchInProgress";
+    
+    let doc = query.docs[0].data();
+    doc.status = `player${playerIndex}Quit`;
+    await admin.firestore().collection('activeRaces').doc(query.docs[0].id).delete();
+    await admin.firestore().collection('completedRaces').doc(query.docs[0].id).set(doc);
+    return "success";
+});
+
 // ------------------
 // Race functions
 
-export const raceStatusUpdate = functions.https.onRequest(async (req,res) => {
+async function decrypt(cipherText) {
+   
+}
+
+function checkContext(context) {
+    if (!context.auth) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'The function must be called while authenticated.'
+        );
+    }    
+}
+
+async function validateAuthorizationHeaders(authorization) {
+    console.log("Authorization: ", authorization);
+    if (!authorization) {
+        functions.logger.error("No authorization header found.");
+        functions.logger.error("Needs Bearer <token> or __session cookie.")
+        return [false, null];
+    }
+
+    // idToken = authorization.split('Bearer ')[1];
+    // if (!idToken) { 
+    //     functions.logger.error("No idToken found.");
+    //     return [false, null];
+    // }
+
+    try {   
+        const decodedToken = await admin.auth().verifyIdToken(authorization);
+        functions.logger.log("Token verified.");
+        return [true, decodedToken.uid];
+    } catch (error) {
+        functions.logger.error("Error verifying token.");
+        functions.logger.error(error);
+        return [false, null];
+    }
+}
+
+export const raceStatusUpdate = functions.https.onRequest(async (req, res) => {
+    console.log(req.body);
+    const [authorized, uid] = await validateAuthorizationHeaders(req.body['Authorization']);
+    const inputHashedData = req.body['x'];
+
+    console.log(authorized, uid);
+
+    if(!authorized || !uid) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'The function must be called while authenticated.'
+        );
+    }
+
+    if (!inputHashedData) {
+        throw new functions.https.HttpsError(
+            'argument-error',
+            'InputHashedData not found.'
+        );
+    }
+    const query = await admin.firestore().collection('activeRaces').where('players', 'array-contains', uid).get();
+    if (query.docs.length === 0) {
+        return "NoRaceFound";
+    }
+    if (query.docs.length > 1) {
+        throw new functions.https.HttpsError(
+            'internal',
+            'Multiple races found for user.'
+        );
+    }
+
+    const playerNumber = query.docs[0].data().players.indexOf(uid);
+
+
+    //1231238:345:30
+    // split inputHashedData into 3 parts
+    // sources from unity:
+    //Epoch.current():trackController.GetPosition():playerControl.GetSpeed()
+    //  a series of math operations are performed on the data before it is hashed
+    //  the data is then hashed using sha256
+    //  we have to undo those steps to get this value,
+    // which results in the above format. Then we split it into 3 parts.
+
+    // const decryptedData = await decrypt(inputHashedData);
+    const decryptedData = inputHashedData;
+    const splitData = decryptedData.split(":");
+
+
     
+    // if the first index (epoch time) is too far behind the current timestamp, the update
+    // is invalid and we should ignore it.
+
+    const queryData = query.docs[0].data();
+    if (queryData.status != 'active') {
+        throw new functions.https.HttpsError(
+            'internal',
+            `Race is not in progress. Current status: ${queryData.status}.`
+        );
+    }
+
+    const speed = parseInt(splitData[0]);
+    const position = parseInt(splitData[1]);
+    const epochTime = parseInt(splitData[2]);
+    const isFinished = splitData[3] === "true";
+    
+    const currentTime = Date.now();
+    const timeDifference = queryData.players[uid].lastUpdate - epochTime;
+    // if (timeDifference > 10000) {
+    //     throw new functions.https.HttpsError(
+    //         'internal',
+    //         `Something didn't seem right 💩.`
+    //     );
+    // }
+
+    // if speed or position has increased impossibly high, ignore
+    const speedDelta = speed - queryData.players[uid].speed;
+    const positionDelta = position - queryData.players[uid].position;
+    if (speedDelta > 100 || positionDelta > 100) {
+        throw new functions.https.HttpsError(   
+            'internal',
+            `Something didn't seem right 👺.`
+        );
+    }
+
+    const raceDataUpdate = {
+        [`players.${uid}.speed`]: speed,
+        [`players.${uid}.position`]: position,
+        [`players.${uid}.lastUpdate`]: Date.now(),
+    };
+
+    if (isFinished) {
+    }
+
+    await admin.firestore().collection('activeRaces').doc(query.docs[0].id).update(raceDataUpdate);
 });
 
 export const raceFinished = functions.https.onRequest(async (req, res) => {
-    // 
+    const [authorized, uid] = await validateAuthorizationHeaders(req.body['Authorization']);
+    const inputHashedData = req.body['x'];
+
+    if(!authorized || !uid) {
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'The function must be called while authenticated.'
+        );
+    }
+
+    if (!inputHashedData) {
+        throw new functions.https.HttpsError(
+            'argument-error',
+            'InputHashedData not found.'
+        );
+    }
+
+    const query = await admin.firestore().collection('activeRaces').where('players', 'array-contains', uid).get();
+    if (query.docs.length === 0) {
+        return "NoRaceFound";
+    }
+    const data = query.docs[0].data();
+    if (data.status != 'active' && data.status != 'awaitingOtherResult') {
+        throw new functions.https.HttpsError(
+            'internal',
+            `Race is not in progress. Current status: ${data.status}.`
+        );
+    }
+
+    const args = inputHashedData.split(":");
+    const time = args[0];
+
+    switch (data.status) {
+        case 'active':
+            await admin.firestore().collection('activeRaces').doc(query.docs[0].id).update({
+                status: 'awaitingOtherResult',
+                player1Time: time,
+            });
+        case 'awaitingOtherResult':
+            const winner = data.player1Time < time ? data.players[0] : data.players[1];
+            const loser = data.player1Time < time ? data.players[1] : data.players[0];
+            await admin.firestore().collection('activeRaces').doc(query.docs[0].id).update({
+                status: 'finished',
+                player2Time: time,
+                winner: winner,
+                loser: loser
+            });
+    }
+
+    return "success";
 });
 
 // ------------------

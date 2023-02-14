@@ -15,7 +15,7 @@ public class UIController : MonoBehaviour
 
     public void Finish(int place) {
         finished = true;
-        speedText.text = "You finished " + place.ToString() + "!";
+        // speedText.text = "You finished " + place.ToString() + "!";
         winText.enabled = true;
 
     }

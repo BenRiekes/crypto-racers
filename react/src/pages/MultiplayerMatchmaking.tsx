@@ -9,6 +9,7 @@ import { auth, db } from "../utils/Firebase";
 import { collection, getDocs } from "firebase/firestore";
 import type { Track } from "../utils/Types";
 import { mdiLoading } from "@mdi/js";
+import { fetchUserTokens } from "../utils/FetchTokens";
 
 export default function MultiplayerMatchmaking() {
     const [tracks, setTracks] = useState<Track[]>([]);
@@ -31,8 +32,15 @@ export default function MultiplayerMatchmaking() {
         setTracks(newTracks);
     }
 
+    async function getCars() {
+        console.log('start');
+        const tokens = await fetchUserTokens(auth.currentUser?.uid);
+        console.log(tokens);
+    }
+
     useEffect(() => {
         getTracks();
+        getCars();
     }, []);
 
     return (

@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using UnityEngine.Events;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Networking;
@@ -25,6 +26,9 @@ public class Networking : MonoBehaviour
     private PlayerControl playerControl;
     private TrackController trackController;
 
+    public UnityEvent Finished;
+
+
     private const string KEY = @"-----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mDMEY+bGphYJKwYBBAHaRw8BAQdAm6hBJLdEwGyApEkAIXhLCEmp2B9vdOhb6EcL
@@ -43,12 +47,24 @@ jHOJJcZMCg==
     private bool authProvided = false; 
     private string authHeader = "";
     public bool active = true;
+    private int startTime;
 
 
     void Start() {
         playerControl = player.GetComponent<PlayerControl>();
         trackController = trackObjects.GetComponent<TrackController>();
         if (active) InvokeRepeating("MakeUpdateRequest", 0, 1);
+        startTime = Epoch.Current();
+    }
+
+    void FixedUpdate() {
+        if (trackController.IsFinished() && !transmitted && active) {
+            WWWForm form = new WWWForm();
+            form.AddField("Authorization", authHeader);
+            form.AddField("x", Epoch.Current() - startTime);
+            UnityWebRequest req = UnityWebRequest.Post(url, form);
+            Finished.Invoke();
+        }
     }
 
     public void ProvideAuthCredentials(string authHeader) {
@@ -105,6 +121,7 @@ jHOJJcZMCg==
         throw new ArgumentException("Can't find encryption key in key ring.");
     }
 
+    private bool transmitted = false;
     private class Update {
         public string authorization;
         public string x;
@@ -118,6 +135,8 @@ jHOJJcZMCg==
         bool finished = trackController.IsFinished();
         string update = String.Format("{0}:{1}:{2}:{3}", position, speed, currentTime, finished);
         byte[] updateBytes = Encoding.UTF8.GetBytes(update);
+
+        Finished = new UnityEvent();
 
         // var publicKeyParameters = (RsaKeyParameters)publicKeyRea;
 

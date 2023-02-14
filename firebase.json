@@ -55,7 +55,7 @@
     "template": "remoteconfig.template.json"
   },
   "hosting": {
-    "public": "public",
+    "public": "react/build",
     "ignore": [
       "firebase.json",
       "**/.*",

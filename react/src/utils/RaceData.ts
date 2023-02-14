@@ -23,4 +23,4 @@ import { RaceData } from "./Types";
 //     playerReadyStatus: [],
 // }
   
-export const RaceContext = createContext<RaceData | null>(null);
+// export 

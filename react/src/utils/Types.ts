@@ -35,7 +35,7 @@ export type RaceData = {
     player2Car: string,
     player2DisplayName: string,
     playerAddresses: string[],
-    players: RaceDataUserStatus[],
+    players: {0: RaceDataUserStatus, 1: RaceDataUserStatus},
     race: string,
     status: string,
     timeMatchmade: number,

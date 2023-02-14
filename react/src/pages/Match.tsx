@@ -17,9 +17,10 @@ export default function Match() {
     const [raceTime, setRaceTime] = useState(0);
     const [raceFinished, setRaceFinished] = useState(false);
 
-    const handleRaceFinished = useCallback((raceTime: number) => {
-        setRaceTime(raceTime);
-        console.log(raceTime);
+    const handleRaceFinished = useCallback(() => {
+        setTimeout(() => {
+            navigate("/postmatch");
+        }, 2500);
     }, []);
     
     useEffect(() => {
@@ -36,6 +37,10 @@ export default function Match() {
         // }
 
     }, []);
+
+    useEffect(() => {
+        addEventListener("RaceFinished", handleRaceFinished);
+    }, [addEventListener]);
 
     useEffect(() => {
         async function sendMessages() {

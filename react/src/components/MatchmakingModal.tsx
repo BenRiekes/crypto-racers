@@ -7,7 +7,6 @@ import { httpsCallable } from "firebase/functions";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db, functions } from "../utils/Firebase";
-import { RaceContext } from "../utils/RaceData";
 import { BettingPoolCardProps, RaceData } from "../utils/Types";
 
 interface MatchmakingModalProps {
@@ -26,7 +25,7 @@ interface TrackParticipantData {
 export default function MatchmakingModal({ trackName, description, image }: MatchmakingModalProps) {
     const toast = useToast();
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const racerContext = useContext(RaceContext);
+    // const racerContext = useContext(RaceContext);
 
     const [blockModalClose, setBlockModalClose] = useState(false);
 
@@ -55,7 +54,7 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
     const [playerNumber, setPlayerNumber] = useState(0);
     const [matchDocId, setMatchDocId] = useState<string | null>(null);
     const [snap, setSnap] = useState<DocumentSnapshot | null>(null);
-    const [setRContext] = useState(racerContext);
+    // const [setRContext] = useState(racerContext);
 
     // ------------------------------
     // Functions
@@ -121,12 +120,8 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
     }
 
     function checkMatchmakingStatus() {
-        console.log(1);
-        console.log(matchmakingActive);
-        console.log(isMatched);
         if (!matchmakingActive) return;
         if (isMatched) return;
-        console.log(2);
         const checkMatchmakingStatusFunction = httpsCallable(functions, 'checkMatchmakingStatus');
         checkMatchmakingStatusFunction()
         .then((result) => {
@@ -231,11 +226,19 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
         getTrackBettingPools();
         console.log("isMatched", isMatched);
     }, [])
-
+    const navigate = useNavigate();
     useEffect(() => {
         if (snap && snap.exists()) {
             console.log(snap.data());
-            setMatchedRaceData(snap.data() as RaceData);
+            const data = snap.data() as RaceData;
+            setMatchedRaceData(data);
+            // if both players are ready, navigate to prematch
+            console.log(data.players);
+            if (data.players["0"].isReady && data.players["1"].isReady) {
+                setReadyButtonLoading(true);
+                setQuitButtonLoading(true);
+                setTimeout(() => { navigate(`/match`) }, 2500);
+            }
         }
     }, [snap]);
 
@@ -549,16 +552,6 @@ export default function MatchmakingModal({ trackName, description, image }: Matc
                         </>
                         ) : (
                         <>
-                        <Menu>
-                            <MenuButton as={Button} rightIcon={<Icon path={mdiChevronDoubleDown} size={1} />}>
-                                Car
-                            </MenuButton>
-                            <MenuList>
-                                <MenuItem>Car 1</MenuItem>
-                                <MenuItem>Car 2</MenuItem>
-                                <MenuItem>Car 3</MenuItem>
-                            </MenuList>
-                        </Menu>
 
                         {(matchmakingActive) ? (
                             <>

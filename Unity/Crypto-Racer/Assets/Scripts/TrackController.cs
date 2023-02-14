@@ -335,7 +335,7 @@ public class TrackController : MonoBehaviour
 
 
         if (trackSegsTravelled >= currentInstruction.length) {
-            if (currentInstructionIndex + 1 > trackInstructions.Length) {
+            if (currentInstructionIndex + 1 > trackInstructions.Length - 1) {
                 currentInstruction.curvature = 0;
                 currentInstruction.length = 999999999;
                 uic.Finish(1);

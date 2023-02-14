@@ -69,7 +69,7 @@ const Home = () => {
 
             <div className = "home-card-container">
 
-                <Card align = 'center' size = 'lg' 
+                {/*<Card align = 'center' size = 'lg' 
                     className = 'home-card' style = {{backgroundColor: '#2d2d2d', color: 'white'}}>
 
                     <CardHeader>
@@ -81,10 +81,10 @@ const Home = () => {
                     </CardBody>
 
                     
-                </Card>
+                </Card>*/}
 
-                <Card align = 'center' size = 'lg' 
-                    className = "home-card"  style = {{backgroundColor: '#2d2d2d', color: 'white'}}>
+                <Card align = 'center' size = 'lg' onClick={() => {window.location.href = "/multiplayer"}}
+                    className = "home-card cursor-pointer"  style = {{backgroundColor: '#2d2d2d', color: 'white'}}>
 
                     <CardHeader>
                         <Heading size = 'xl'>Multi Player</Heading>
